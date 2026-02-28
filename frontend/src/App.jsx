@@ -42,7 +42,7 @@ function AppRoutes() {
   const { token } = useSelector((s) => s.auth);
 
   useEffect(() => {
-    if (token) dispatch(fetchMe()).catch(() => {});
+    if (token) dispatch(fetchMe()).catch(() => { });
   }, [token, dispatch]);
 
   // Login route - always render Login component (never blank)

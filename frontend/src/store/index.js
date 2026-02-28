@@ -1,6 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './authSlice';
-import api from '../api';
+import api, { setApiStore } from '../api';
 
 export const store = configureStore({
   reducer: {
@@ -8,4 +8,4 @@ export const store = configureStore({
   },
 });
 
-api.setApiStore(store);
+setApiStore(store);
