@@ -6,8 +6,6 @@ export const store = configureStore({
   reducer: {
     auth: authReducer,
   },
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
-      thunk: { extraArgument: api },
-    }),
 });
+
+api.setApiStore(store);

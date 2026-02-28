@@ -14,13 +14,13 @@ export default function Attendance() {
   }, []);
 
   const studentCols = [
-    { label: 'Student', render: (r) => r.Student?.User ? `${r.Student.User.firstName} ${r.Student.User.lastName}` : '-' },
+    { label: 'Student', render: (r) => r.first_name && r.last_name ? `${r.first_name} ${r.last_name}` : r.student_no || '-' },
     { key: 'date', label: 'Date' },
     { key: 'status', label: 'Status', render: (r) => <span style={{ textTransform: 'capitalize' }}>{r.status}</span> },
   ];
 
   const teacherCols = [
-    { label: 'Teacher', render: (r) => r.Teacher?.User ? `${r.Teacher.User.firstName} ${r.Teacher.User.lastName}` : '-' },
+    { label: 'Teacher', render: (r) => r.first_name && r.last_name ? `${r.first_name} ${r.last_name}` : r.employee_id || '-' },
     { key: 'date', label: 'Date' },
     { key: 'status', label: 'Status', render: (r) => <span style={{ textTransform: 'capitalize' }}>{r.status}</span> },
   ];

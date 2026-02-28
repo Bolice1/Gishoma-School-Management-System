@@ -1,63 +1,89 @@
-const { Exercise, ExerciseSubmission, Course, Teacher, Student, User } = require('../models');
+const { v4: uuidv4 } = require('uuid');
+const { query } = require('../config/database');
 
-exports.getAll = async (req, res) => {
+function getSchoolId(req) {
+  return req.contextSchoolId || req.schoolId;
+}
+
+async function list(req, res, next) {
   try {
+    const schoolId = getSchoolId(req);
     const { courseId, status } = req.query;
-    const where = {};
-    if (courseId) where.courseId = courseId;
-    if (status) where.status = status;
-    
-    const exercises = await Exercise.findAll({
-      where,
-      include: [
-        { model: Course, as: 'Course' },
-        { model: Teacher, as: 'Teacher', include: ['User'] },
-      ],
-    });
-    res.json(exercises);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
 
-exports.getById = async (req, res) => {
+    let where = 'e.school_id = ?';
+    const params = [schoolId];
+    if (courseId) { where += ' AND e.course_id = ?'; params.push(courseId); }
+    if (status) { where += ' AND e.status = ?'; params.push(status); }
+
+    const rows = await query(
+      `SELECT e.*, c.name as course_name FROM exercises e JOIN courses c ON e.course_id = c.id WHERE ${where} ORDER BY e.created_at DESC`,
+      params
+    );
+    res.json(rows);
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function getById(req, res, next) {
   try {
-    const exercise = await Exercise.findByPk(req.params.id, {
-      include: [
-        { model: Course, as: 'Course' },
-        { model: Teacher, as: 'Teacher', include: ['User'] },
-      ],
-    });
-    if (!exercise) return res.status(404).json({ error: 'Exercise not found' });
-    res.json(exercise);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+    const { id } = req.params;
+    const schoolId = getSchoolId(req);
 
-exports.create = async (req, res) => {
+    const [rows] = await query(
+      'SELECT e.*, c.name as course_name FROM exercises e JOIN courses c ON e.course_id = c.id WHERE e.id = ? AND e.school_id = ?',
+      [id, schoolId]
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'Exercise not found' });
+    res.json(rows[0]);
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function create(req, res, next) {
   try {
-    const exercise = await Exercise.create(req.body);
-    res.status(201).json(await Exercise.findByPk(exercise.id, { include: ['Course', 'Teacher'] }));
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+    const schoolId = getSchoolId(req);
+    const { courseId, title, questions, dueDate, maxScore, timeLimitMinutes, status } = req.body;
+    const teacherId = req.user.teacherId;
 
-exports.submit = async (req, res) => {
+    if (!teacherId) return res.status(403).json({ error: 'Teacher ID required' });
+
+    const id = uuidv4();
+    const qJson = JSON.stringify(questions || []);
+    await query(
+      `INSERT INTO exercises (id, school_id, course_id, teacher_id, title, questions, due_date, max_score, time_limit_minutes, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, schoolId, courseId, teacherId, title, qJson, dueDate || null, maxScore || 100, timeLimitMinutes || null, status || 'active']
+    );
+
+    const [created] = await query('SELECT * FROM exercises WHERE id = ?', [id]);
+    res.status(201).json(created[0]);
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function submit(req, res, next) {
   try {
     const { exerciseId, studentId } = req.params;
-    const { answers, timeSpent } = req.body;
-    
-    const submission = await ExerciseSubmission.create({
-      exerciseId,
-      studentId,
-      answers: answers || {},
-      submittedAt: new Date(),
-      timeSpent: timeSpent || 0,
-    });
-    res.status(201).json(submission);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    const schoolId = getSchoolId(req);
+    const { answers, timeSpentMinutes } = req.body;
+
+    const [ex] = await query('SELECT id FROM exercises WHERE id = ? AND school_id = ?', [exerciseId, schoolId]);
+    if (!ex[0]) return res.status(404).json({ error: 'Exercise not found' });
+
+    const id = uuidv4();
+    const ansJson = JSON.stringify(answers || {});
+    await query(
+      `INSERT INTO exercise_submissions (id, school_id, exercise_id, student_id, answers, submitted_at, time_spent_minutes) VALUES (?, ?, ?, ?, ?, NOW(), ?)`,
+      [id, schoolId, exerciseId, studentId, ansJson, timeSpentMinutes || null]
+    );
+
+    const [created] = await query('SELECT * FROM exercise_submissions WHERE id = ?', [id]);
+    res.status(201).json(created[0]);
+  } catch (err) {
+    next(err);
   }
-};
+}
+
+module.exports = { list, getById, create, submit };

@@ -10,9 +10,9 @@ export default function Homework() {
   }, []);
 
   const columns = [
-    { label: 'Course', render: (r) => r.Course?.name || '-' },
+    { label: 'Course', render: (r) => r.course_name || '-' },
     { key: 'title', label: 'Title' },
-    { key: 'dueDate', label: 'Due Date', render: (r) => new Date(r.dueDate).toLocaleDateString() },
+    { key: 'due_date', label: 'Due Date', render: (r) => new Date(r.due_date).toLocaleDateString() },
     { key: 'status', label: 'Status' },
   ];
 

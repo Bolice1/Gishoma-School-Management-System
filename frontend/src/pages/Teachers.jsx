@@ -10,10 +10,10 @@ export default function Teachers() {
   }, []);
 
   const columns = [
-    { key: 'employeeId', label: 'Employee ID' },
+    { key: 'employee_id', label: 'Employee ID' },
     { key: 'specialization', label: 'Specialization' },
-    { label: 'Name', render: (r) => r.User ? `${r.User.firstName} ${r.User.lastName}` : '-' },
-    { label: 'Email', render: (r) => r.User?.email || '-' },
+    { label: 'Name', render: (r) => r.first_name && r.last_name ? `${r.first_name} ${r.last_name}` : '-' },
+    { label: 'Email', render: (r) => r.email || '-' },
   ];
 
   return (

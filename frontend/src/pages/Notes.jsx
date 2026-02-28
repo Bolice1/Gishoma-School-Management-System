@@ -10,7 +10,7 @@ export default function Notes() {
   }, []);
 
   const columns = [
-    { label: 'Course', render: (r) => r.Course?.name || '-' },
+    { label: 'Course', render: (r) => r.course_name || '-' },
     { key: 'title', label: 'Title' },
     { key: 'topic', label: 'Topic' },
   ];

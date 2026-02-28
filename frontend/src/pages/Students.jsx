@@ -6,15 +6,17 @@ export default function Students() {
   const [students, setStudents] = useState([]);
 
   useEffect(() => {
-    api.get('/students').then((res) => setStudents(res.data.students || []));
+    api.get('/students')
+      .then((res) => setStudents(res.data?.students ?? []))
+      .catch(() => setStudents([]));
   }, []);
 
   const columns = [
-    { key: 'studentId', label: 'Student ID' },
-    { key: 'class', label: 'Class' },
+    { key: 'student_id', label: 'Student ID' },
+    { key: 'class_level', label: 'Class' },
     { key: 'section', label: 'Section' },
-    { label: 'Name', render: (r) => r.User ? `${r.User.firstName} ${r.User.lastName}` : '-' },
-    { label: 'Email', render: (r) => r.User?.email || '-' },
+    { label: 'Name', render: (r) => r.first_name && r.last_name ? `${r.first_name} ${r.last_name}` : '-' },
+    { label: 'Email', render: (r) => r.email || '-' },
   ];
 
   return (

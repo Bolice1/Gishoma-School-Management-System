@@ -10,7 +10,7 @@ export default function Discipline() {
   }, []);
 
   const columns = [
-    { label: 'Student', render: (r) => r.Student?.User ? `${r.Student.User.firstName} ${r.Student.User.lastName}` : '-' },
+    { label: 'Student', render: (r) => r.student_first_name && r.student_last_name ? `${r.student_first_name} ${r.student_last_name}` : r.student_no || '-' },
     { key: 'date', label: 'Date' },
     { key: 'type', label: 'Type', render: (r) => <span style={{ textTransform: 'capitalize' }}>{r.type}</span> },
     { key: 'description', label: 'Description' },

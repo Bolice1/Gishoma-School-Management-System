@@ -1,89 +1,74 @@
-const { Attendance, Student, Teacher, Course, User } = require('../models');
-const { Op } = require('sequelize');
+const { v4: uuidv4 } = require('uuid');
+const { query } = require('../config/database');
 
-exports.getStudentAttendance = async (req, res) => {
+function getSchoolId(req) {
+  return req.contextSchoolId || req.schoolId;
+}
+
+async function listStudents(req, res, next) {
   try {
-    const { studentId, startDate, endDate } = req.query;
-    const where = { type: 'student' };
-    if (studentId) where.studentId = studentId;
-    if (startDate && endDate) {
-      where.date = { [Op.between]: [startDate, endDate] };
-    }
-    
-    const attendance = await Attendance.findAll({
-      where,
-      include: [
-        { model: Student, as: 'Student', include: ['User'] },
-        { model: Course, as: 'Course' },
-      ],
-      order: [['date', 'DESC']],
-    });
-    res.json(attendance);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    const schoolId = getSchoolId(req);
+    const { startDate, endDate, studentId } = req.query;
+
+    let where = 'a.school_id = ? AND a.type = "student"';
+    const params = [schoolId];
+    if (startDate) { where += ' AND a.date >= ?'; params.push(startDate); }
+    if (endDate) { where += ' AND a.date <= ?'; params.push(endDate); }
+    if (studentId) { where += ' AND a.student_id = ?'; params.push(studentId); }
+
+    const rows = await query(
+      `SELECT a.*, s.student_id as student_no, u.first_name, u.last_name FROM attendance a
+       JOIN students s ON a.student_id = s.id JOIN users u ON s.user_id = u.id WHERE ${where} ORDER BY a.date DESC`,
+      params
+    );
+    res.json(rows);
+  } catch (err) {
+    next(err);
   }
-};
+}
 
-exports.getTeacherAttendance = async (req, res) => {
+async function listTeachers(req, res, next) {
   try {
-    const { teacherId, startDate, endDate } = req.query;
-    const where = { type: 'teacher' };
-    if (teacherId) where.teacherId = teacherId;
-    if (startDate && endDate) {
-      where.date = { [Op.between]: [startDate, endDate] };
-    }
-    
-    const attendance = await Attendance.findAll({
-      where,
-      include: [{ model: Teacher, as: 'Teacher', include: ['User'] }],
-      order: [['date', 'DESC']],
-    });
-    res.json(attendance);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    const schoolId = getSchoolId(req);
+    const { startDate, endDate, teacherId } = req.query;
+
+    let where = 'a.school_id = ? AND a.type = "teacher"';
+    const params = [schoolId];
+    if (startDate) { where += ' AND a.date >= ?'; params.push(startDate); }
+    if (endDate) { where += ' AND a.date <= ?'; params.push(endDate); }
+    if (teacherId) { where += ' AND a.teacher_id = ?'; params.push(teacherId); }
+
+    const rows = await query(
+      `SELECT a.*, t.employee_id, u.first_name, u.last_name FROM attendance a
+       JOIN teachers t ON a.teacher_id = t.id JOIN users u ON t.user_id = u.id WHERE ${where} ORDER BY a.date DESC`,
+      params
+    );
+    res.json(rows);
+  } catch (err) {
+    next(err);
   }
-};
+}
 
-exports.recordAttendance = async (req, res) => {
+async function record(req, res, next) {
   try {
+    const schoolId = getSchoolId(req);
     const { records } = req.body;
-    const created = await Attendance.bulkCreate(records);
-    res.status(201).json(created);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
 
-exports.getAttendanceSummary = async (req, res) => {
-  try {
-    const { startDate, endDate } = req.query;
-    const where = {};
-    if (startDate && endDate) {
-      where.date = { [Op.between]: [startDate, endDate] };
+    if (!Array.isArray(records) || records.length === 0) {
+      return res.status(400).json({ error: 'Records array required' });
     }
-    
-    const studentAttendance = await Attendance.findAll({
-      where: { ...where, type: 'student' },
-      attributes: ['status', 'studentId'],
-    });
-    
-    const teacherAttendance = await Attendance.findAll({
-      where: { ...where, type: 'teacher' },
-      attributes: ['status', 'teacherId'],
-    });
-    
-    const studentStats = { present: 0, absent: 0, late: 0 };
-    studentAttendance.forEach(a => {
-      if (a.status in studentStats) studentStats[a.status]++;
-    });
-    
-    const teacherStats = { present: 0, absent: 0, late: 0 };
-    teacherAttendance.forEach(a => {
-      if (a.status in teacherStats) teacherStats[a.status]++;
-    });
-    
-    res.json({ student: studentStats, teacher: teacherStats });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+
+    for (const r of records) {
+      const id = uuidv4();
+      await query(
+        `INSERT INTO attendance (id, school_id, student_id, teacher_id, course_id, date, status, type, remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [id, schoolId, r.studentId || null, r.teacherId || null, r.courseId || null, r.date, r.status, r.type, r.remarks || null]
+      );
+    }
+    res.status(201).json({ message: `${records.length} record(s) created` });
+  } catch (err) {
+    next(err);
   }
-};
+}
+
+module.exports = { listStudents, listTeachers, record };

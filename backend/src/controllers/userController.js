@@ -1,105 +1,64 @@
-const { User, Student, Teacher } = require('../models');
+const { v4: uuidv4 } = require('uuid');
+const { query } = require('../config/database');
+const authService = require('../services/authService');
 
-exports.getAllUsers = async (req, res) => {
+function getSchoolId(req) {
+  return req.contextSchoolId || req.schoolId;
+}
+
+async function list(req, res, next) {
   try {
+    const schoolId = req.userRole === 'super_admin' ? req.query.schoolId : getSchoolId(req);
     const { role, page = 1, limit = 20 } = req.query;
-    const where = {};
-    if (role) where.role = role;
-    
-    const { count, rows } = await User.findAndCountAll({
-      where,
-      limit: parseInt(limit),
-      offset: (parseInt(page) - 1) * parseInt(limit),
-      include: [
-        { model: Student, as: 'Student', required: false },
-        { model: Teacher, as: 'Teacher', required: false },
-      ],
-    });
-    res.json({ users: rows, total: count });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
 
-exports.createUser = async (req, res) => {
-  try {
-    const { email, password, firstName, lastName, role, phone, studentData, teacherData } = req.body;
-    
-    const existing = await User.findOne({ where: { email } });
-    if (existing) {
-      return res.status(400).json({ error: 'Email already registered' });
-    }
-    
-    const user = await User.create({
-      email,
-      password: password || 'password123',
-      firstName,
-      lastName,
-      role,
-      phone,
-    });
-    
-    if (role === 'student' && studentData) {
-      await Student.create({
-        userId: user.id,
-        studentId: studentData.studentId,
-        class: studentData.class,
-        section: studentData.section,
-        dateOfBirth: studentData.dateOfBirth,
-        gender: studentData.gender,
-        parentName: studentData.parentName,
-        parentPhone: studentData.parentPhone,
-        address: studentData.address,
-        enrollmentDate: studentData.enrollmentDate,
-      });
-    } else if (role === 'teacher' && teacherData) {
-      await Teacher.create({
-        userId: user.id,
-        employeeId: teacherData.employeeId,
-        specialization: teacherData.specialization,
-        dateOfBirth: teacherData.dateOfBirth,
-        gender: teacherData.gender,
-        hireDate: teacherData.hireDate,
-        address: teacherData.address,
-      });
-    } else if (role === 'bursar' || role === 'dean') {
-      // No additional profile needed
-    }
-    
-    const fullUser = await User.findByPk(user.id, {
-      include: [
-        { model: Student, as: 'Student', required: false },
-        { model: Teacher, as: 'Teacher', required: false },
-      ],
-    });
-    res.status(201).json(fullUser);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+    let where = '1=1';
+    const params = [];
+    if (schoolId) { where += ' AND u.school_id = ?'; params.push(schoolId); }
+    if (role) { where += ' AND u.role = ?'; params.push(role); }
 
-exports.updateUser = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { firstName, lastName, phone, isActive, password } = req.body;
-    
-    const user = await User.findByPk(id);
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    
-    await user.update({ firstName, lastName, phone, isActive, password });
-    res.json(await User.findByPk(id));
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+    const count = await query(
+      `SELECT COUNT(*) as total FROM users u WHERE ${where}`,
+      params
+    );
+    const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
+    const users = await query(
+      `SELECT u.id, u.school_id, u.email, u.first_name, u.last_name, u.role, u.is_active, u.last_login_at FROM users u WHERE ${where} ORDER BY u.created_at DESC LIMIT ? OFFSET ?`,
+      [...params, parseInt(limit, 10), offset]
+    );
 
-exports.deleteUser = async (req, res) => {
-  try {
-    const user = await User.findByPk(req.params.id);
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    await user.destroy();
-    res.json({ message: 'User deleted' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.json({ users, total: count[0]?.total || 0 });
+  } catch (err) {
+    next(err);
   }
-};
+}
+
+async function create(req, res, next) {
+  try {
+    const schoolId = getSchoolId(req);
+    const { email, password, firstName, lastName, role, phone } = req.body;
+
+    const [existing] = await query('SELECT id FROM users WHERE email = ? AND (school_id = ? OR (school_id IS NULL AND ? IS NULL))', [email, schoolId, schoolId]);
+    if (existing[0]) return res.status(400).json({ error: 'Email already registered' });
+
+    const userId = uuidv4();
+    const hash = await authService.hashPassword(password || 'password123');
+
+    const allowedRoles = ['school_admin', 'bursar', 'dean', 'teacher', 'student'];
+    if (!allowedRoles.includes(role)) return res.status(400).json({ error: 'Invalid role' });
+
+    await query(
+      'INSERT INTO users (id, school_id, email, password_hash, first_name, last_name, role, phone) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [userId, schoolId, email, hash, firstName, lastName, role, phone || null]
+    );
+
+    const [created] = await query(
+      'SELECT id, school_id, email, first_name, last_name, role, is_active FROM users WHERE id = ?',
+      [userId]
+    );
+    res.status(201).json(created[0]);
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { list, create };

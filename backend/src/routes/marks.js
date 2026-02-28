@@ -1,12 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const markController = require('../controllers/markController');
-const { authenticate, authorize } = require('../middleware/auth');
+const { authenticate, authorize, requireSchoolContext } = require('../middleware/auth');
+const { assertSchoolAccess } = require('../middleware/schoolAccess');
 
-router.use(authenticate, authorize('admin', 'teacher'));
-router.get('/', markController.getAll);
-router.post('/', markController.create);
-router.post('/bulk', markController.bulkCreate);
-router.put('/:id', markController.update);
+router.use(authenticate, requireSchoolContext, assertSchoolAccess);
+
+router.get('/', authorize('super_admin', 'school_admin', 'teacher'), markController.list);
+router.post('/', authorize('teacher'), markController.create);
+router.post('/bulk', authorize('teacher'), markController.bulkCreate);
 
 module.exports = router;

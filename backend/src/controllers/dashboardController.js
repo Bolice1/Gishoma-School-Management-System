@@ -1,161 +1,154 @@
-const {
-  User,
-  Student,
-  Teacher,
-  Mark,
-  Attendance,
-  Payment,
-  Fee,
-  Discipline,
-  Homework,
-  Exercise,
-  Note,
-  HomeworkSubmission,
-  ExerciseSubmission,
-} = require('../models');
-const { Op } = require('sequelize');
+const { query } = require('../config/database');
 
-exports.adminDashboard = async (req, res) => {
+async function superAdminDashboard(req, res, next) {
   try {
-    const totalStudents = await Student.count();
-    const totalTeachers = await Teacher.count();
-    const totalUsers = await User.count();
-
-    const thisMonth = new Date();
-    thisMonth.setDate(1);
-    const payments = await Payment.findAll({
-      where: { paymentDate: { [Op.gte]: thisMonth } },
-    });
-    const monthlyRevenue = payments.reduce((sum, p) => sum + parseFloat(p.amount), 0);
-
-    const today = new Date().toISOString().split('T')[0];
-    const todayAttendance = await Attendance.count({
-      where: { date: today, type: 'student', status: 'present' },
-    });
-    const todayAbsent = await Attendance.count({
-      where: { date: today, type: 'student', status: 'absent' },
-    });
-
-    const openDisciplines = await Discipline.count({ where: { status: 'open' } });
-    const pendingHomework = await Homework.count({ where: { status: 'published' } });
+    const sc = await query('SELECT COUNT(*) as c FROM schools WHERE is_active = 1');
+    const uc = await query('SELECT COUNT(*) as c FROM users WHERE is_active = 1');
+    const stc = await query('SELECT COUNT(*) as c FROM students s JOIN schools sc ON s.school_id = sc.id WHERE sc.is_active = 1');
+    const tc = await query('SELECT COUNT(*) as c FROM teachers t JOIN schools sc ON t.school_id = sc.id WHERE sc.is_active = 1');
 
     res.json({
-      totalStudents,
-      totalTeachers,
-      totalUsers,
-      monthlyRevenue,
-      todayPresent: todayAttendance,
-      todayAbsent,
-      openDisciplines,
-      pendingHomework,
+      totalSchools: sc[0]?.c || 0,
+      totalUsers: uc[0]?.c || 0,
+      totalStudents: stc[0]?.c || 0,
+      totalTeachers: tc[0]?.c || 0,
     });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    next(err);
   }
-};
+}
 
-exports.bursarDashboard = async (req, res) => {
+async function schoolAdminDashboard(req, res, next) {
   try {
-    const today = new Date().toISOString().split('T')[0];
-    const todayPayments = await Payment.findAll({
-      where: { paymentDate: { [Op.gte]: today } },
-      include: [{ model: Student, as: 'Student', include: ['User'] }],
-    });
-    const todayTotal = todayPayments.reduce((sum, p) => sum + parseFloat(p.amount), 0);
-
-    const thisMonth = new Date();
-    thisMonth.setDate(1);
-    const monthPayments = await Payment.findAll({
-      where: { paymentDate: { [Op.gte]: thisMonth } },
-    });
-    const monthTotal = monthPayments.reduce((sum, p) => sum + parseFloat(p.amount), 0);
-
-    const fees = await Fee.findAll({ where: { isActive: true } });
+    const schoolId = req.schoolId;
+    const st = await query('SELECT COUNT(*) as c FROM students WHERE school_id = ?', [schoolId]);
+    const t = await query('SELECT COUNT(*) as c FROM teachers WHERE school_id = ?', [schoolId]);
+    const c = await query('SELECT COUNT(*) as c FROM courses WHERE school_id = ?', [schoolId]);
+    const d = await query('SELECT COUNT(*) as c FROM disciplines WHERE school_id = ? AND status = "open"', [schoolId]);
 
     res.json({
-      todayPayments: todayPayments.length,
-      todayTotal,
-      monthTotal,
-      fees,
+      totalStudents: st[0]?.c || 0,
+      totalTeachers: t[0]?.c || 0,
+      totalCourses: c[0]?.c || 0,
+      openDisciplines: d[0]?.c || 0,
     });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    next(err);
   }
-};
+}
 
-exports.deanDashboard = async (req, res) => {
+async function bursarDashboard(req, res, next) {
   try {
+    const schoolId = req.schoolId;
     const today = new Date().toISOString().split('T')[0];
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    const monthStr = monthStart.toISOString().split('T')[0];
 
-    const studentPresent = await Attendance.count({
-      where: { date: today, type: 'student', status: 'present' },
-    });
-    const studentAbsent = await Attendance.count({
-      where: { date: today, type: 'student', status: 'absent' },
-    });
-    const teacherPresent = await Attendance.count({
-      where: { date: today, type: 'teacher', status: 'present' },
-    });
-    const teacherAbsent = await Attendance.count({
-      where: { date: today, type: 'teacher', status: 'absent' },
-    });
-
-    const totalStudents = await Student.count();
-    const totalTeachers = await Teacher.count();
+    const todayPay = await query(
+      'SELECT COUNT(*) as cnt, COALESCE(SUM(amount), 0) as total FROM payments WHERE school_id = ? AND DATE(payment_date) = ?',
+      [schoolId, today]
+    );
+    const monthPay = await query(
+      'SELECT COUNT(*) as cnt, COALESCE(SUM(amount), 0) as total FROM payments WHERE school_id = ? AND DATE(payment_date) >= ?',
+      [schoolId, monthStr]
+    );
 
     res.json({
-      studentPresent,
-      studentAbsent,
-      teacherPresent,
-      teacherAbsent,
-      studentAttendanceRate: totalStudents > 0 ? ((studentPresent / totalStudents) * 100).toFixed(1) : 0,
-      teacherAttendanceRate: totalTeachers > 0 ? ((teacherPresent / totalTeachers) * 100).toFixed(1) : 0,
+      todayPayments: todayPay[0]?.cnt || 0,
+      todayTotal: Number(todayPay[0]?.total || 0),
+      monthPayments: monthPay[0]?.cnt || 0,
+      monthTotal: Number(monthPay[0]?.total || 0),
     });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    next(err);
   }
-};
+}
 
-exports.teacherDashboard = async (req, res) => {
+async function deanDashboard(req, res, next) {
+  try {
+    const schoolId = req.schoolId;
+    const today = new Date().toISOString().split('T')[0];
+
+    const sPresent = await query(
+      'SELECT COUNT(*) as c FROM attendance WHERE school_id = ? AND date = ? AND type = "student" AND status = "present"',
+      [schoolId, today]
+    );
+    const sAbsent = await query(
+      'SELECT COUNT(*) as c FROM attendance WHERE school_id = ? AND date = ? AND type = "student" AND status = "absent"',
+      [schoolId, today]
+    );
+    const tPresent = await query(
+      'SELECT COUNT(*) as c FROM attendance WHERE school_id = ? AND date = ? AND type = "teacher" AND status = "present"',
+      [schoolId, today]
+    );
+    const tAbsent = await query(
+      'SELECT COUNT(*) as c FROM attendance WHERE school_id = ? AND date = ? AND type = "teacher" AND status = "absent"',
+      [schoolId, today]
+    );
+
+    res.json({
+      studentPresent: sPresent[0]?.c || 0,
+      studentAbsent: sAbsent[0]?.c || 0,
+      teacherPresent: tPresent[0]?.c || 0,
+      teacherAbsent: tAbsent[0]?.c || 0,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function teacherDashboard(req, res, next) {
   try {
     const teacherId = req.user.teacherId || req.params.teacherId;
     if (!teacherId) return res.status(400).json({ error: 'Teacher ID required' });
 
-    const disciplines = await Discipline.count({ where: { teacherId } });
-    const homeworks = await Homework.count({ where: { teacherId, status: 'published' } });
-    const exercises = await Exercise.count({ where: { teacherId, status: 'active' } });
-    const marks = await Mark.count({ where: { teacherId } });
+    const schoolIdRow = await query('SELECT school_id FROM teachers WHERE id = ?', [teacherId]);
+    const schoolId = schoolIdRow[0]?.school_id;
+    if (!schoolId) return res.status(404).json({ error: 'Teacher not found' });
+
+    const marks = await query('SELECT COUNT(*) as c FROM marks WHERE teacher_id = ?', [teacherId]);
+    const homeworks = await query('SELECT COUNT(*) as c FROM homework WHERE teacher_id = ? AND status = "published"', [teacherId]);
+    const exercises = await query('SELECT COUNT(*) as c FROM exercises WHERE teacher_id = ? AND status = "active"', [teacherId]);
+    const disciplines = await query('SELECT COUNT(*) as c FROM disciplines WHERE teacher_id = ?', [teacherId]);
 
     res.json({
-      disciplineCases: disciplines,
-      homeworks,
-      exercises,
-      marksAdded: marks,
+      marksAdded: marks[0]?.c || 0,
+      homeworks: homeworks[0]?.c || 0,
+      exercises: exercises[0]?.c || 0,
+      disciplineCases: disciplines[0]?.c || 0,
     });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    next(err);
   }
-};
+}
 
-exports.studentDashboard = async (req, res) => {
+async function studentDashboard(req, res, next) {
   try {
     const studentId = req.user.studentId || req.params.studentId;
     if (!studentId) return res.status(400).json({ error: 'Student ID required' });
 
-    const [notesCount, exercisesCount, homeworkSubmissions, marksCount] = await Promise.all([
-      Note.count(),
-      ExerciseSubmission.count({ where: { studentId } }),
-      HomeworkSubmission.count({ where: { studentId } }),
-      Mark.count({ where: { studentId } }),
-    ]);
+    const marks = await query('SELECT COUNT(*) as c FROM marks WHERE student_id = ?', [studentId]);
+    const homeworkSub = await query('SELECT COUNT(*) as c FROM homework_submissions WHERE student_id = ?', [studentId]);
+    const exSub = await query('SELECT COUNT(*) as c FROM exercise_submissions WHERE student_id = ?', [studentId]);
+    const notes = await query('SELECT COUNT(DISTINCT n.id) as c FROM notes n JOIN courses c ON n.course_id = c.id JOIN enrollments e ON e.course_id = c.id AND e.student_id = ?', [studentId]);
 
     res.json({
-      notesAvailable: notesCount,
-      exercisesCompleted: exercisesCount,
-      homeworkSubmitted: homeworkSubmissions,
-      marksRecorded: marksCount,
+      marksRecorded: marks[0]?.c || 0,
+      homeworkSubmitted: homeworkSub[0]?.c || 0,
+      exercisesCompleted: exSub[0]?.c || 0,
+      notesAvailable: notes[0]?.c || 0,
     });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    next(err);
   }
+}
+
+module.exports = {
+  superAdminDashboard,
+  schoolAdminDashboard,
+  bursarDashboard,
+  deanDashboard,
+  teacherDashboard,
+  studentDashboard,
 };

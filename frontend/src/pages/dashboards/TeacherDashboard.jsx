@@ -7,12 +7,12 @@ export default function TeacherDashboard() {
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
-    if (user?.teacherId) {
-      api.get(`/dashboard/teacher/${user.teacherId}`).then((res) => setStats(res.data));
-    }
+    const id = user?.teacherId;
+    if (id) api.get(`/dashboard/teacher/${id}`).then((res) => setStats(res.data)).catch(() => setStats({}));
   }, [user?.teacherId]);
 
-  if (!stats) return <div>Loading...</div>;
+  if (!stats && !user?.teacherId) return <div>Loading...</div>;
+  if (!stats) return <div>No data</div>;
 
   return (
     <div>

@@ -1,70 +1,119 @@
-const jwt = require('jsonwebtoken');
-const { User, Student, Teacher } = require('../models');
+const { v4: uuidv4 } = require('uuid');
+const { query } = require('../config/database');
+const authService = require('../services/authService');
+const activityLogService = require('../services/activityLogService');
 
-const generateToken = (userId) => {
-  return jwt.sign(
-    { userId },
-    process.env.JWT_SECRET || 'secret',
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-  );
-};
-
-const formatUserResponse = async (user) => {
-  const userObj = user.toJSON();
-  delete userObj.password;
-  
-  if (user.role === 'student') {
-    const student = await Student.findOne({ where: { userId: user.id } });
-    if (student) userObj.studentId = student.id;
-  }
-  if (user.role === 'teacher') {
-    const teacher = await Teacher.findOne({ where: { userId: user.id } });
-    if (teacher) userObj.teacherId = teacher.id;
-  }
-  
-  return userObj;
-};
-
-exports.login = async (req, res) => {
+async function login(req, res, next) {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
-    }
-    
-    const user = await User.scope('withPassword').findOne({ where: { email } });
+    const { email, password, schoolId } = req.body;
+    const user = await authService.findUserByEmail(email, schoolId || undefined);
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
-    
-    const valid = await user.comparePassword(password);
+    const valid = await authService.comparePassword(password, user.password_hash);
     if (!valid) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
-    
-    if (!user.isActive) {
-      return res.status(403).json({ error: 'Account is deactivated' });
-    }
-    
-    const token = generateToken(user.id);
-    const userData = await formatUserResponse(user);
-    
-    res.json({
-      token,
-      user: userData,
-      expiresIn: process.env.JWT_EXPIRES_IN || '7d',
-    });
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ error: 'Login failed' });
-  }
-};
 
-exports.me = async (req, res) => {
-  try {
-    const userData = await formatUserResponse(req.user);
-    res.json(userData);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to get user data' });
+    const accessToken = authService.generateAccessToken({
+      userId: user.id,
+      role: user.role,
+      schoolId: user.school_id,
+    });
+    const refresh = await authService.storeRefreshToken(user.id, authService.generateRefreshToken());
+
+    await query('UPDATE users SET last_login_at = NOW() WHERE id = ?', [user.id]);
+
+    activityLogService.log({
+      userId: user.id,
+      schoolId: user.school_id,
+      action: 'login',
+      resource: 'auth',
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+    }).catch(() => {});
+
+    const { password_hash, two_factor_secret, ...safeUser } = user;
+    if (user.role === 'student') {
+      const [s] = await query('SELECT id FROM students WHERE user_id = ?', [user.id]);
+      safeUser.studentId = s[0]?.id;
+    } else if (user.role === 'teacher') {
+      const [t] = await query('SELECT id FROM teachers WHERE user_id = ?', [user.id]);
+      safeUser.teacherId = t[0]?.id;
+    }
+    res.json({
+      accessToken,
+      refreshToken: refresh.token,
+      expiresAt: refresh.expiresAt,
+      user: safeUser,
+    });
+  } catch (err) {
+    next(err);
   }
-};
+}
+
+async function refresh(req, res, next) {
+  try {
+    const { refreshToken } = req.body;
+    const record = await authService.validateRefreshToken(refreshToken);
+    if (!record) {
+      return res.status(401).json({ error: 'Invalid or expired refresh token' });
+    }
+
+    const [users] = await query('SELECT * FROM users WHERE id = ? AND is_active = 1', [record.user_id]);
+    const user = users[0];
+    if (!user) {
+      return res.status(401).json({ error: 'User not found or inactive' });
+    }
+
+    await authService.revokeRefreshToken(refreshToken);
+    const newRefresh = await authService.storeRefreshToken(user.id, authService.generateRefreshToken());
+    const accessToken = authService.generateAccessToken({
+      userId: user.id,
+      role: user.role,
+      schoolId: user.school_id,
+    });
+
+    const { password_hash, two_factor_secret, ...safeUser } = user;
+    res.json({
+      accessToken,
+      refreshToken: newRefresh.token,
+      expiresAt: newRefresh.expiresAt,
+      user: safeUser,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function logout(req, res, next) {
+  try {
+    const { refreshToken } = req.body;
+    if (refreshToken) {
+      await authService.revokeRefreshToken(refreshToken);
+    }
+    res.json({ message: 'Logged out' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function me(req, res) {
+  const users = await query(
+    'SELECT id, school_id, email, first_name, last_name, role, phone, is_active FROM users WHERE id = ?',
+    [req.userId]
+  );
+  const user = users[0];
+  if (!user) return res.status(404).json({ error: 'User not found' });
+
+  if (user.role === 'student') {
+    const s = await query('SELECT id FROM students WHERE user_id = ?', [user.id]);
+    user.studentId = s[0]?.id;
+  } else if (user.role === 'teacher') {
+    const t = await query('SELECT id FROM teachers WHERE user_id = ?', [user.id]);
+    user.teacherId = t[0]?.id;
+  }
+  res.json(user);
+}
+
+module.exports = { login, refresh, logout, me };

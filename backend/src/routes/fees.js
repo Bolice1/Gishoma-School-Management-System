@@ -1,12 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const feeController = require('../controllers/feeController');
-const { authenticate, authorize } = require('../middleware/auth');
+const { authenticate, authorize, requireSchoolContext } = require('../middleware/auth');
+const { assertSchoolAccess } = require('../middleware/schoolAccess');
 
-router.use(authenticate);
-router.get('/', authorize('admin', 'bursar'), feeController.getAllFees);
-router.post('/', authorize('admin', 'bursar'), feeController.createFee);
-router.get('/payments', authorize('admin', 'bursar'), feeController.getAllPayments);
-router.post('/payments', authorize('admin', 'bursar'), feeController.recordPayment);
+router.use(authenticate, requireSchoolContext, assertSchoolAccess);
+
+router.get('/', authorize('super_admin', 'school_admin', 'bursar'), feeController.listFees);
+router.post('/', authorize('school_admin', 'bursar'), feeController.createFee);
+router.get('/payments', authorize('super_admin', 'school_admin', 'bursar'), feeController.listPayments);
+router.post('/payments', authorize('bursar', 'school_admin'), feeController.recordPayment);
 
 module.exports = router;

@@ -1,17 +1,25 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { Provider } from 'react-redux';
-import { BrowserRouter } from 'react-router-dom';
 import App from './App';
-import { store } from './store';
 import './index.css';
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <Provider store={store}>
-      <BrowserRouter>
+function renderApp() {
+  const rootEl = document.getElementById('root');
+  if (!rootEl) {
+    document.body.innerHTML = '<div style="padding:2rem;color:red;">Error: #root not found</div>';
+    return;
+  }
+
+  try {
+    ReactDOM.createRoot(rootEl).render(
+      <React.StrictMode>
         <App />
-      </BrowserRouter>
-    </Provider>
-  </React.StrictMode>
-);
+      </React.StrictMode>
+    );
+  } catch (err) {
+    console.error('React render error:', err);
+    rootEl.innerHTML = `<div style="padding:2rem;color:red;font-family:sans-serif;">Render Error: ${err.message}</div>`;
+  }
+}
+
+renderApp();

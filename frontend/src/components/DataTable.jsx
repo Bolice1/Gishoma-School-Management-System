@@ -1,20 +1,20 @@
-export default function DataTable({ columns, data }) {
+export default function DataTable({ columns = [], data }) {
   return (
     <div style={styles.wrapper}>
       <table style={styles.table}>
         <thead>
           <tr>
-            {columns.map((col) => (
-              <th key={col.key} style={styles.th}>{col.label}</th>
+            {(columns || []).map((col, i) => (
+              <th key={col.key ?? col.label ?? i} style={styles.th}>{col.label}</th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {data?.map((row, i) => (
-            <tr key={row.id || i}>
-              {columns.map((col) => (
-                <td key={col.key} style={styles.td}>
-                  {col.render ? col.render(row) : row[col.key]}
+          {(data || []).map((row, i) => (
+            <tr key={row?.id ?? i}>
+              {(columns || []).map((col, j) => (
+                <td key={col.key ?? col.label ?? j} style={styles.td}>
+                  {col.render ? col.render(row) : row?.[col.key]}
                 </td>
               ))}
             </tr>

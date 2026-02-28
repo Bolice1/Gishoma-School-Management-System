@@ -13,11 +13,11 @@ export default function Fees() {
   }, []);
 
   const paymentCols = [
-    { label: 'Student', render: (r) => r.Student?.User ? `${r.Student.User.firstName} ${r.Student.User.lastName}` : '-' },
-    { key: 'receiptNumber', label: 'Receipt' },
+    { label: 'Student', render: (r) => r.first_name && r.last_name ? `${r.first_name} ${r.last_name}` : r.student_id || '-' },
+    { key: 'receipt_number', label: 'Receipt' },
     { key: 'amount', label: 'Amount', render: (r) => `RWF ${Number(r.amount).toLocaleString()}` },
-    { key: 'paymentDate', label: 'Date', render: (r) => new Date(r.paymentDate).toLocaleDateString() },
-    { key: 'paymentMethod', label: 'Method' },
+    { key: 'payment_date', label: 'Date', render: (r) => new Date(r.payment_date).toLocaleDateString() },
+    { key: 'payment_method', label: 'Method' },
   ];
 
   const feeCols = [

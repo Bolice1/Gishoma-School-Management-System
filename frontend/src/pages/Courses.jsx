@@ -12,8 +12,8 @@ export default function Courses() {
   const columns = [
     { key: 'code', label: 'Code' },
     { key: 'name', label: 'Name' },
-    { key: 'classLevel', label: 'Level' },
-    { label: 'Teacher', render: (r) => r.Teacher?.User ? `${r.Teacher.User.firstName} ${r.Teacher.User.lastName}` : '-' },
+    { key: 'class_level', label: 'Level' },
+    { label: 'Teacher', render: (r) => r.teacher_first_name && r.teacher_last_name ? `${r.teacher_first_name} ${r.teacher_last_name}` : r.teacher_employee_id || '-' },
   ];
 
   return (

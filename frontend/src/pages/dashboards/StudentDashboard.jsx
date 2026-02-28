@@ -7,12 +7,12 @@ export default function StudentDashboard() {
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
-    if (user?.studentId) {
-      api.get(`/dashboard/student/${user.studentId}`).then((res) => setStats(res.data));
-    }
+    const id = user?.studentId;
+    if (id) api.get(`/dashboard/student/${id}`).then((res) => setStats(res.data)).catch(() => setStats({}));
   }, [user?.studentId]);
 
-  if (!stats) return <div>Loading...</div>;
+  if (!stats && !user?.studentId) return <div>Loading...</div>;
+  if (!stats) return <div>No data</div>;
 
   return (
     <div>

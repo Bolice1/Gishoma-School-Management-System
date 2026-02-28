@@ -8,8 +8,8 @@ export default function Header() {
   return (
     <header style={styles.header}>
       <div style={styles.user}>
-        <span style={styles.name}>{user?.firstName} {user?.lastName}</span>
-        <span style={styles.role}>{user?.role}</span>
+        <span style={styles.name}>{user?.first_name ?? ''} {user?.last_name ?? ''}</span>
+        <span style={styles.role}>{user?.role ? String(user.role).replace('_', ' ') : ''}</span>
       </div>
       <button style={styles.logoutBtn} onClick={() => dispatch(logout())}>
         Logout

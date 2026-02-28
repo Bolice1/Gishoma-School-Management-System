@@ -5,7 +5,7 @@ export default function BursarDashboard() {
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
-    api.get('/dashboard/bursar').then((res) => setStats(res.data));
+    api.get('/dashboard/bursar').then((res) => setStats(res.data)).catch(() => setStats({ todayPayments: 0, todayTotal: 0, monthTotal: 0 }));
   }, []);
 
   if (!stats) return <div>Loading...</div>;

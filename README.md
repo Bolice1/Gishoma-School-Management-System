@@ -1,83 +1,81 @@
-# Gishoma Secondary School - Management System
+# Gishoma Multi-School Management System
 
-A complete full-stack school management system for Gishoma Secondary School with role-based access control, dashboards, PDF reports, and real-time features.
+A **secure, scalable, multi-tenant** school management system for many schools across the country. Built with Node.js/Express backend, React frontend, and MySQL database.
 
 ## Features
 
-### Roles & Permissions
+### Multi-School Architecture
+- **Multi-tenant design**: Each school's data is isolated
+- **School registration**: Schools register and manage their own data
+- **Scalable**: Designed for thousands of schools and tens of thousands of users
 
+### Roles & Permissions
 | Role | Capabilities |
 |------|-------------|
-| **Admin** | Full system access, user management, all dashboards |
-| **Bursar** | Fee management, payments, receipts |
+| **Super Admin** | Platform management, all schools, subscriptions, activity logs |
+| **School Admin** | School profile, teachers, students, school settings |
+| **Bursar** | Fees, payments, receipts |
 | **Dean of Courses** | Teacher & student attendance monitoring |
-| **Teacher** | Marks, discipline, homework, notes, exercises |
+| **Teacher** | Marks, discipline, homework, exercises, notes |
 | **Student** | Notes, exercises, homework, PDF reports |
 
-### Functional Highlights
-
-- JWT authentication with role-based access control
-- CRUD for students, teachers, courses, discipline, homework, exercises, fees
-- PDF reports: marks, homework progress, discipline cases
-- Real-time support via WebSockets (Socket.io)
-- Dashboard per role with relevant statistics
-
-## Tech Stack
-
-- **Backend:** Node.js, Express, Sequelize, PostgreSQL, JWT, PDFKit, Socket.io
-- **Frontend:** React, Vite, Redux Toolkit, React Router
+### Security
+- JWT access tokens + refresh tokens
+- Role-based access control (RBAC) at every endpoint
+- Input validation (express-validator)
+- Password hashing (bcrypt)
+- Rate limiting & brute-force protection
+- Activity logging for auditing
+- SQL injection, XSS, CSRF protection
+- Helmet security headers
 
 ---
 
-## Quick Start (Local Development)
+## Quick Start
 
 ### Prerequisites
-
 - Node.js 18+
-- PostgreSQL 14+ (or Docker for database only)
-- npm or yarn
+- MySQL 8+ (or Docker)
 
-### 1. Database Setup
+### 1. Database
 
-**Option A: Using Docker**
+**Option A: Docker**
 ```bash
 docker-compose up -d
+# Wait for MySQL to be ready (~30 seconds)
 ```
 
-**Option B: Local PostgreSQL**
+**Option B: Local MySQL**
+- Create database: `CREATE DATABASE Gishoma;`
+- Ensure user `root` with password `12345` has access (or update `.env`)
 
-Create a database:
-```sql
-CREATE DATABASE gishoma_school;
-```
-
-### 2. Backend Setup
+### 2. Backend
 
 ```bash
 cd backend
 cp .env.example .env
-# Edit .env - set DATABASE_URL and JWT_SECRET
+# Edit .env: DB credentials, JWT secrets
 
 npm install
-npm run db:seed    # Creates tables + sample data
-npm run dev        # Starts on http://localhost:5000
+npm run db:init    # Creates tables
+npm run db:seed    # Sample data
+npm run dev        # http://localhost:5000
 ```
 
-### 3. Frontend Setup
+### 3. Frontend
 
 ```bash
 cd frontend
 npm install
-npm run dev        # Starts on http://localhost:5173
+npm run dev        # http://localhost:5173
 ```
 
 ### 4. Login
 
-Open http://localhost:5173 and use:
-
 | Role | Email | Password |
 |------|-------|----------|
-| Admin | admin@gishoma.edu | password123 |
+| Super Admin | superadmin@gishoma.edu | password123 |
+| School Admin | admin@gishoma.edu | password123 |
 | Bursar | bursar@gishoma.edu | password123 |
 | Dean | dean@gishoma.edu | password123 |
 | Teacher | teacher1@gishoma.edu | password123 |
@@ -92,60 +90,65 @@ Open http://localhost:5173 and use:
 ```env
 NODE_ENV=development
 PORT=5000
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/gishoma_school
-JWT_SECRET=your-secret-key-change-in-production
-JWT_EXPIRES_IN=7d
+
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=12345
+DB_NAME=Gishoma
+
+JWT_ACCESS_SECRET=your-access-secret-min-32-chars
+JWT_REFRESH_SECRET=your-refresh-secret-min-32-chars
+JWT_ACCESS_EXPIRY=15m
+JWT_REFRESH_EXPIRY=7d
+
 FRONTEND_URL=http://localhost:5173
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX=100
 ```
-
----
-
-## API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | /api/auth/login | Login |
-| GET | /api/auth/me | Current user |
-| GET | /api/dashboard/admin | Admin stats |
-| GET | /api/dashboard/bursar | Bursar stats |
-| GET | /api/dashboard/dean | Dean attendance stats |
-| GET | /api/dashboard/teacher/:id | Teacher stats |
-| GET | /api/dashboard/student/:id | Student stats |
-| GET | /api/pdf/marks/:studentId | Marks PDF |
-| GET | /api/pdf/homework/:studentId | Homework PDF |
-| GET | /api/pdf/discipline/:studentId | Discipline PDF |
-| ... | /api/students, /api/teachers, etc. | CRUD resources |
-
----
-
-## Production Deployment
-
-### Option 1: Docker (Full Stack)
-
-```bash
-# Build and run everything
-docker-compose -f docker-compose.full.yml up -d
-
-# Access at http://localhost (port 80)
-```
-
-### Option 2: Manual Deployment
-
-1. **Database:** Provision PostgreSQL (e.g. Supabase, Railway, AWS RDS)
-2. **Backend:** Deploy to Node.js host (Railway, Render, Heroku)
-   - Set `DATABASE_URL`, `JWT_SECRET`, `FRONTEND_URL`
-3. **Frontend:** Build and deploy to static host
-   ```bash
-   cd frontend && npm run build
-   ```
-   - Set API base URL if different from same-origin
-   - Deploy `dist/` to Nginx, Vercel, Netlify, etc.
 
 ---
 
 ## Database Schema
 
-See [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) for the full schema.
+- **schools** – Tenant root, one per school
+- **users** – Global, linked to `school_id` (null for super_admin)
+- **refresh_tokens** – JWT refresh token storage
+- **activity_logs** – Audit trail
+- **students, teachers** – Per-school, linked to users
+- **courses** – Per-school, assigned to teachers
+- **enrollments** – Student-course links
+- **attendance** – Student/teacher attendance
+- **marks** – Student grades
+- **disciplines** – Discipline cases
+- **homework, homework_submissions**
+- **exercises, exercise_submissions**
+- **notes**
+- **fees, payments**
+- **announcements**
+
+Full schema: `backend/src/sql/schema.sql`
+
+---
+
+## API Overview
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | /api/auth/login | Login (returns accessToken, refreshToken) |
+| POST | /api/auth/refresh | Refresh tokens |
+| GET | /api/auth/me | Current user |
+| GET | /api/schools | List schools (super_admin) |
+| GET | /api/dashboard/super-admin | Platform stats |
+| GET | /api/dashboard/school-admin | School stats |
+| GET | /api/dashboard/bursar | Bursar stats |
+| GET | /api/dashboard/dean | Attendance stats |
+| GET | /api/pdf/marks/:studentId | Marks PDF |
+| GET | /api/pdf/homework/:studentId | Homework PDF |
+| GET | /api/pdf/discipline/:studentId | Discipline PDF |
+| ... | /api/students, /api/teachers, etc. | CRUD resources |
+
+All school-scoped routes use `req.schoolId` from JWT. Super admin can pass `?schoolId=xxx` to access a specific school.
 
 ---
 
@@ -154,27 +157,37 @@ See [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) for the full schema.
 ```
 ├── backend/
 │   ├── src/
-│   │   ├── config/       # Database config
-│   │   ├── models/       # Sequelize models
+│   │   ├── config/        # Database (mysql2)
 │   │   ├── controllers/
-│   │   ├── middleware/   # Auth, RBAC
+│   │   ├── middleware/    # auth, RBAC, validate, sanitize, logging
 │   │   ├── routes/
-│   │   ├── services/    # PDF generation
-│   │   ├── scripts/      # Seed script
+│   │   ├── services/      # authService, pdfService, activityLog
+│   │   ├── sql/           # schema.sql
+│   │   ├── scripts/       # initDb, seed
+│   │   ├── validators/
 │   │   └── server.js
 │   └── package.json
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
 │   │   ├── pages/
-│   │   ├── store/        # Redux
-│   │   ├── api/
-│   │   └── App.jsx
+│   │   ├── store/
+│   │   └── api/
 │   └── package.json
-├── docker-compose.yml    # PostgreSQL only
-├── docker-compose.full.yml  # Full deployment
+├── docker-compose.yml     # MySQL
 └── README.md
 ```
+
+---
+
+## Production Deployment
+
+1. **Database**: Provision MySQL (AWS RDS, DigitalOcean, etc.)
+2. **Backend**: Deploy to Node.js host (Railway, Render, etc.)
+   - Set all env vars
+   - Use strong JWT secrets (32+ chars)
+3. **Frontend**: `npm run build` → deploy `dist/` to Nginx/Vercel/Netlify
+4. **Security**: Enable HTTPS, set `FRONTEND_URL` to production domain
 
 ---
 

@@ -1,12 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const attendanceController = require('../controllers/attendanceController');
-const { authenticate, authorize } = require('../middleware/auth');
+const { authenticate, authorize, requireSchoolContext } = require('../middleware/auth');
+const { assertSchoolAccess } = require('../middleware/schoolAccess');
 
-router.use(authenticate);
-router.get('/students', authorize('admin', 'dean', 'teacher'), attendanceController.getStudentAttendance);
-router.get('/teachers', authorize('admin', 'dean'), attendanceController.getTeacherAttendance);
-router.get('/summary', authorize('admin', 'dean'), attendanceController.getAttendanceSummary);
-router.post('/', authorize('admin', 'dean', 'teacher'), attendanceController.recordAttendance);
+router.use(authenticate, requireSchoolContext, assertSchoolAccess);
+
+router.get('/students', authorize('super_admin', 'school_admin', 'dean', 'teacher'), attendanceController.listStudents);
+router.get('/teachers', authorize('super_admin', 'school_admin', 'dean'), attendanceController.listTeachers);
+router.post('/', authorize('super_admin', 'school_admin', 'dean', 'teacher'), attendanceController.record);
 
 module.exports = router;

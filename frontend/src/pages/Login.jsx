@@ -6,20 +6,23 @@ import { login } from '../store/authSlice';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [schoolId, setSchoolId] = useState('');
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { loading, error } = useSelector((s) => s.auth);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const result = await dispatch(login({ email, password }));
+    const credentials = { email, password };
+    if (schoolId) credentials.schoolId = schoolId;
+    const result = await dispatch(login(credentials));
     if (login.fulfilled.match(result)) navigate('/');
   };
 
   return (
     <div style={styles.page}>
       <div style={styles.card}>
-        <h1 style={styles.title}>Gishoma Secondary School</h1>
+        <h1 style={styles.title}>Gishoma Multi-School</h1>
         <p style={styles.subtitle}>School Management System</p>
         <form onSubmit={handleSubmit} style={styles.form}>
           <input
@@ -38,13 +41,20 @@ export default function Login() {
             required
             style={styles.input}
           />
+          <input
+            type="text"
+            placeholder="School ID (optional - for school users)"
+            value={schoolId}
+            onChange={(e) => setSchoolId(e.target.value)}
+            style={styles.input}
+          />
           {error && <p style={styles.error}>{error}</p>}
           <button type="submit" disabled={loading} style={styles.button}>
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
         <p style={styles.hint}>
-          Demo: admin@gishoma.edu / password123
+          Demo: superadmin@gishoma.edu or admin@gishoma.edu / password123
         </p>
       </div>
     </div>

@@ -10,11 +10,11 @@ export default function Marks() {
   }, []);
 
   const columns = [
-    { label: 'Student', render: (r) => r.Student?.User ? `${r.Student.User.firstName} ${r.Student.User.lastName}` : '-' },
-    { label: 'Course', render: (r) => r.Course?.name || '-' },
+    { label: 'Student', render: (r) => r.student_first_name && r.student_last_name ? `${r.student_first_name} ${r.student_last_name}` : r.student_no || '-' },
+    { label: 'Course', render: (r) => r.course_name || '-' },
     { key: 'term', label: 'Term' },
-    { key: 'examType', label: 'Type' },
-    { label: 'Score', render: (r) => `${r.score}/${r.maxScore}` },
+    { key: 'exam_type', label: 'Type' },
+    { label: 'Score', render: (r) => `${r.score}/${r.max_score}` },
   ];
 
   return (

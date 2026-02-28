@@ -2,7 +2,14 @@ import { NavLink } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 
 const roleNav = {
-  admin: [
+  super_admin: [
+    { to: '/', label: 'Dashboard' },
+    { to: '/schools', label: 'Schools' },
+    { to: '/users', label: 'Users' },
+    { to: '/activity-logs', label: 'Activity Logs' },
+    { to: '/announcements', label: 'Announcements' },
+  ],
+  school_admin: [
     { to: '/', label: 'Dashboard' },
     { to: '/users', label: 'Users' },
     { to: '/students', label: 'Students' },
@@ -49,13 +56,13 @@ const roleNav = {
 
 export default function Sidebar() {
   const { user } = useSelector((s) => s.auth);
-  const navItems = roleNav[user?.role] || roleNav.admin;
+  const navItems = roleNav[user?.role] || roleNav.school_admin;
 
   return (
     <aside style={styles.aside}>
       <div style={styles.logo}>
         <span style={styles.logoText}>Gishoma</span>
-        <span style={styles.logoSub}>School Management</span>
+        <span style={styles.logoSub}>Multi-School Management</span>
       </div>
       <nav style={styles.nav}>
         {navItems.map((item) => (
