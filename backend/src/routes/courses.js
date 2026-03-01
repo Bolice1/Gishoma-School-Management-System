@@ -3,9 +3,8 @@ const router = express.Router();
 const courseController = require('../controllers/courseController');
 const { authenticate, authorize, requireSchoolContext } = require('../middleware/auth');
 const { assertSchoolAccess } = require('../middleware/schoolAccess');
-
+// these are the endpoints to get courses or create other
 router.use(authenticate, requireSchoolContext, assertSchoolAccess);
-
 router.get('/', authorize('super_admin', 'school_admin', 'dean', 'teacher', 'student'), courseController.list);
 router.get('/:id', courseController.getById);
 router.post('/', authorize('super_admin', 'school_admin'), courseController.create);

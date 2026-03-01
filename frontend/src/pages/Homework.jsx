@@ -157,7 +157,7 @@ export default function Homework() {
                   <tr key={hw.id}>
                     <td style={s.td}><strong>{hw.title}</strong></td>
                     <td style={s.td}>{hw.course_name}</td>
-                    <td style={s.td} style={{ ...s.td, color: isOverdue(hw.due_date) ? 'var(--color-danger)' : 'inherit' }}>{new Date(hw.due_date).toLocaleDateString()}</td>
+                    <td style={s.td}style={{ ...s.td, color: isOverdue(hw.due_date) ? 'var(--color-danger)' : 'inherit' }}>{new Date(hw.due_date).toLocaleDateString()}</td>
                     <td style={s.td}>{hw.max_score}</td>
                     <td style={s.td}><span style={s.badge(hw.status === 'published' ? 'blue' : 'green')}>{hw.status}</span></td>
                     <td style={s.td}>
