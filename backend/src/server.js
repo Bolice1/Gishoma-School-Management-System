@@ -54,14 +54,14 @@ app.use(morgan(':method :url :status :response-time ms :userId', {
 
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10),
-  max: parseInt(process.env.RATE_LIMIT_MAX || '100', 10),
+  max: parseInt(process.env.RATE_LIMIT_MAX || '100', 100),
   message: { error: 'Too many requests' },
 });
 app.use('/api/', limiter);
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: 1000,
   message: { error: 'Too many login attempts' },
 });
 app.use('/api/auth/login', authLimiter);

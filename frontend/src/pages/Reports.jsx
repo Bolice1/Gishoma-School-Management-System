@@ -7,14 +7,18 @@ export default function Reports() {
 
   const downloadPdf = (type) => {
     if (!studentId) return;
-    api.get(`/pdf/${type}/${studentId}`, { responseType: 'blob' }).then((res) => {
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `${type}-report.pdf`);
-      link.click();
-      window.URL.revokeObjectURL(url);
-    });
+    api.get(`/pdf/${type}/${studentId}`, { responseType: 'blob' })
+      .then((res) => {
+        const url = window.URL.createObjectURL(new Blob([res.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `${type}-report.pdf`);
+        link.click();
+        window.URL.revokeObjectURL(url);
+      })
+      .catch(() => {
+        alert('Failed to download report');
+      });
   };
 
   if (!studentId) return <div>Loading...</div>;

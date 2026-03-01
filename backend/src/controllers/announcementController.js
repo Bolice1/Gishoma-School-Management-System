@@ -35,7 +35,7 @@ async function create(req, res, next) {
       [id, schoolId, title, content, req.userId, targetRole || 'all', priority || 'medium']
     );
 
-    const [created] = await query('SELECT * FROM announcements WHERE id = ?', [id]);
+    const created = await query('SELECT * FROM announcements WHERE id = ?', [id]);
     const io = req.app.get('io');
     if (io) io.to(schoolId || 'platform').emit('announcement', created[0]);
     res.status(201).json(created[0]);

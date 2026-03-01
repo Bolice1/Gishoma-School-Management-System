@@ -1,3 +1,14 @@
+DATABASE_SCHEMA.md
+docker-compose.full.yml
+docker-compose.yml
+README.md
+frontend/nginx.conf
+frontend/vite.config.js
+frontend/Dockerfile
+backend/.env
+backend/.env.example
+backend/Dockerfile
+backend/src/sql/schema.sql
 # Logs
 logs
 *.log

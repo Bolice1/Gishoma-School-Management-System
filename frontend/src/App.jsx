@@ -30,8 +30,12 @@ import Reports from './pages/Reports';
 import ActivityLogs from './pages/ActivityLogs';
 
 function ProtectedRoute({ children, roles }) {
-  const { user, token } = useSelector((s) => s.auth);
+  const { user, token, loading } = useSelector((s) => s.auth);
+  // not authenticated at all
   if (!token) return <Navigate to="/login" replace />;
+  // still loading user info
+  if (loading && !user) return <LoadingSpinner />;
+  // user exists but role not allowed
   if (roles && user && !roles.includes(user.role)) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
@@ -48,7 +52,7 @@ function AppRoutes() {
   // Login route - always render Login component (never blank)
   if (location.pathname === '/login') {
     if (token) return <Navigate to="/" replace />;
-    return <Login />;
+   return <Login />;
   }
 
   // All other routes require auth - redirect to login if no token

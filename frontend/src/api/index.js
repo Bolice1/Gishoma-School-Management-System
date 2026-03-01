@@ -15,6 +15,7 @@ api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
     if (token) config.headers.Authorization = `Bearer ${token}`;
   } catch (e) {
+    
     // localStorage may be unavailable (private browsing)
   }
   return config;
@@ -51,7 +52,7 @@ api.interceptors.response.use(
         }
       } catch (e) {}
     }
-    return Promise.reject(err);
+   return Promise.reject(err);
   }
 );
 

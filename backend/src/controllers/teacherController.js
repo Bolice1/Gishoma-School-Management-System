@@ -24,7 +24,7 @@ async function getById(req, res, next) {
     const { id } = req.params;
     const schoolId = getSchoolId(req);
 
-    const [rows] = await query(
+    const rows = await query(
       `SELECT t.*, u.first_name, u.last_name, u.email FROM teachers t JOIN users u ON t.user_id = u.id WHERE t.id = ? AND t.school_id = ?`,
       [id, schoolId]
     );
@@ -54,7 +54,7 @@ async function create(req, res, next) {
       [id, schoolId, userId, employeeId || `T${Date.now()}`, specialization || null, dateOfBirth || null, gender || null, hireDate || null, address || null]
     );
 
-    const [created] = await query(
+    const created = await query(
       `SELECT t.*, u.first_name, u.last_name, u.email FROM teachers t JOIN users u ON t.user_id = u.id WHERE t.id = ?`,
       [id]
     );
@@ -71,7 +71,7 @@ async function update(req, res, next) {
     const updates = req.body;
     const allowed = ['employee_id', 'specialization', 'date_of_birth', 'gender', 'hire_date', 'address'];
 
-    const [existing] = await query('SELECT id FROM teachers WHERE id = ? AND school_id = ?', [id, schoolId]);
+    const existing = await query('SELECT id FROM teachers WHERE id = ? AND school_id = ?', [id, schoolId]);
     if (!existing[0]) return res.status(404).json({ error: 'Teacher not found' });
 
     const set = [];
@@ -87,7 +87,7 @@ async function update(req, res, next) {
       await query(`UPDATE teachers SET ${set.join(', ')} WHERE id = ?`, vals);
     }
 
-    const [rows] = await query(
+    const rows = await query(
       `SELECT t.*, u.first_name, u.last_name, u.email FROM teachers t JOIN users u ON t.user_id = u.id WHERE t.id = ?`,
       [id]
     );

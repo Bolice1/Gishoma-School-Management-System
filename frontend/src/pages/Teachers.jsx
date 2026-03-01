@@ -6,7 +6,15 @@ export default function Teachers() {
   const [teachers, setTeachers] = useState([]);
 
   useEffect(() => {
-    api.get('/teachers').then((res) => setTeachers(res.data.teachers || []));
+    let canceled = false;
+    api.get('/teachers')
+      .then((res) => {
+        if (!canceled) setTeachers(res.data.teachers || []);
+      })
+      .catch(() => {
+        if (!canceled) setTeachers([]);
+      });
+    return () => { canceled = true; };
   }, []);
 
   const columns = [

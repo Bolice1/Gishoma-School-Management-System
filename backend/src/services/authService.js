@@ -5,10 +5,10 @@ const { v4: uuidv4 } = require('uuid');
 const { query } = require('../config/database');
 
 const SALT_ROUNDS = 12;
-const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'access-secret-min-32-characters-long';
-const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'refresh-secret-min-32-characters-long';
-const ACCESS_EXPIRY = process.env.JWT_ACCESS_EXPIRY || '15m';
-const REFRESH_EXPIRY = process.env.JWT_REFRESH_EXPIRY || '7d';
+const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
+const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
+const ACCESS_EXPIRY = process.env.JWT_ACCESS_EXPIRY;
+const REFRESH_EXPIRY = process.env.JWT_REFRESH_EXPIRY;
 
 async function hashPassword(plain) {
   return bcrypt.hash(plain, SALT_ROUNDS);
@@ -48,13 +48,12 @@ async function revokeRefreshToken(token) {
 
 async function validateRefreshToken(token) {
   const hash = crypto.createHash('sha256').update(token).digest('hex');
-  const rows = await query(
+  const rows = await query(  // ← add [rows] destructuring
     'SELECT * FROM refresh_tokens WHERE token_hash = ? AND revoked = 0 AND expires_at > NOW()',
     [hash]
   );
   return rows[0] || null;
 }
-
 async function findUserByEmail(email, schoolId = null) {
   let rows;
   if (schoolId) {

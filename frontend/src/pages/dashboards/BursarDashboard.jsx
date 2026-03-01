@@ -5,7 +5,11 @@ export default function BursarDashboard() {
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
-    api.get('/dashboard/bursar').then((res) => setStats(res.data)).catch(() => setStats({ todayPayments: 0, todayTotal: 0, monthTotal: 0 }));
+    let canceled = false;
+    api.get('/dashboard/bursar')
+      .then((res) => { if (!canceled) setStats(res.data); })
+      .catch(() => { if (!canceled) setStats({ todayPayments: 0, todayTotal: 0, monthTotal: 0 }); });
+    return () => { canceled = true; };
   }, []);
 
   if (!stats) return <div>Loading...</div>;

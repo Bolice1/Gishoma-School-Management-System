@@ -5,7 +5,11 @@ export default function SchoolAdminDashboard() {
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
-    api.get('/dashboard/school-admin').then((res) => setStats(res.data));
+    let canceled = false;
+    api.get('/dashboard/school-admin')
+      .then((res) => { if (!canceled) setStats(res.data); })
+      .catch(() => { if (!canceled) setStats(null); });
+    return () => { canceled = true; };
   }, []);
 
   if (!stats) return <div>Loading...</div>;

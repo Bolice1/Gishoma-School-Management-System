@@ -6,7 +6,11 @@ export default function Announcements() {
   const [announcements, setAnnouncements] = useState([]);
 
   useEffect(() => {
-    api.get('/announcements').then((res) => setAnnouncements(res.data || []));
+    let canceled = false;
+    api.get('/announcements')
+      .then((res) => { if (!canceled) setAnnouncements(res.data || []); })
+      .catch(() => { if (!canceled) setAnnouncements([]); });
+    return () => { canceled = true; };
   }, []);
 
   const columns = [

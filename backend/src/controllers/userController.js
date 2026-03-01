@@ -37,7 +37,7 @@ async function create(req, res, next) {
     const schoolId = getSchoolId(req);
     const { email, password, firstName, lastName, role, phone } = req.body;
 
-    const [existing] = await query('SELECT id FROM users WHERE email = ? AND (school_id = ? OR (school_id IS NULL AND ? IS NULL))', [email, schoolId, schoolId]);
+    const existing = await query('SELECT id FROM users WHERE email = ? AND (school_id = ? OR (school_id IS NULL AND ? IS NULL))', [email, schoolId, schoolId]);
     if (existing[0]) return res.status(400).json({ error: 'Email already registered' });
 
     const userId = uuidv4();
@@ -51,7 +51,7 @@ async function create(req, res, next) {
       [userId, schoolId, email, hash, firstName, lastName, role, phone || null]
     );
 
-    const [created] = await query(
+    const created = await query(
       'SELECT id, school_id, email, first_name, last_name, role, is_active FROM users WHERE id = ?',
       [userId]
     );

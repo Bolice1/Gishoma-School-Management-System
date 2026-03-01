@@ -30,7 +30,7 @@ async function getById(req, res, next) {
     const { id } = req.params;
     const schoolId = getSchoolId(req);
 
-    const [rows] = await query(
+    const rows = await query(
       'SELECT e.*, c.name as course_name FROM exercises e JOIN courses c ON e.course_id = c.id WHERE e.id = ? AND e.school_id = ?',
       [id, schoolId]
     );
@@ -56,7 +56,7 @@ async function create(req, res, next) {
       [id, schoolId, courseId, teacherId, title, qJson, dueDate || null, maxScore || 100, timeLimitMinutes || null, status || 'active']
     );
 
-    const [created] = await query('SELECT * FROM exercises WHERE id = ?', [id]);
+    const created = await query('SELECT * FROM exercises WHERE id = ?', [id]);
     res.status(201).json(created[0]);
   } catch (err) {
     next(err);
@@ -69,7 +69,7 @@ async function submit(req, res, next) {
     const schoolId = getSchoolId(req);
     const { answers, timeSpentMinutes } = req.body;
 
-    const [ex] = await query('SELECT id FROM exercises WHERE id = ? AND school_id = ?', [exerciseId, schoolId]);
+    const ex = await query('SELECT id FROM exercises WHERE id = ? AND school_id = ?', [exerciseId, schoolId]);
     if (!ex[0]) return res.status(404).json({ error: 'Exercise not found' });
 
     const id = uuidv4();
@@ -79,7 +79,7 @@ async function submit(req, res, next) {
       [id, schoolId, exerciseId, studentId, ansJson, timeSpentMinutes || null]
     );
 
-    const [created] = await query('SELECT * FROM exercise_submissions WHERE id = ?', [id]);
+    const created = await query('SELECT * FROM exercise_submissions WHERE id = ?', [id]);
     res.status(201).json(created[0]);
   } catch (err) {
     next(err);

@@ -14,9 +14,17 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const credentials = { email, password };
-    if (schoolId) credentials.schoolId = schoolId;
+    if (schoolId && schoolId.trim()) credentials.schoolId = schoolId.trim();
     const result = await dispatch(login(credentials));
-    if (login.fulfilled.match(result)) navigate('/');
+    // only navigate when login succeeds
+    if (login.fulfilled.match(result)) {
+      // redirect to root; the router will send the user to the
+      // appropriate dashboard based on their role
+      navigate('/', { replace: true });
+      // clear sensitive fields
+      setPassword('');
+      setSchoolId('');
+    }
   };
 
   return (

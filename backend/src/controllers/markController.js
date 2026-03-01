@@ -45,7 +45,7 @@ async function create(req, res, next) {
       [id, schoolId, studentId, courseId, teacherId, term, academicYear, examType || null, score, maxScore || 100, remarks || null]
     );
 
-    const [created] = await query('SELECT * FROM marks WHERE id = ?', [id]);
+    const created = await query('SELECT * FROM marks WHERE id = ?', [id]);
     res.status(201).json(created[0]);
   } catch (err) {
     next(err);

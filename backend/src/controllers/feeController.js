@@ -29,7 +29,7 @@ async function createFee(req, res, next) {
       [id, schoolId, name, amount, description || null, term || null, academicYear, dueDate || null]
     );
 
-    const [created] = await query('SELECT * FROM fees WHERE id = ?', [id]);
+    const created = await query('SELECT * FROM fees WHERE id = ?', [id]);
     res.status(201).json(created[0]);
   } catch (err) {
     next(err);
@@ -72,7 +72,7 @@ async function recordPayment(req, res, next) {
       [id, schoolId, studentId, feeId, amount, receiptNumber, paymentMethod || 'cash', reference || null, remarks || null]
     );
 
-    const [created] = await query(
+    const created = await query(
       `SELECT p.*, s.student_id, u.first_name, u.last_name, f.name as fee_name FROM payments p
        JOIN students s ON p.student_id = s.id JOIN users u ON s.user_id = u.id JOIN fees f ON p.fee_id = f.id WHERE p.id = ?`,
       [id]

@@ -24,7 +24,7 @@ async function getById(req, res, next) {
     const { id } = req.params;
     const schoolId = getSchoolId(req);
 
-    const [rows] = await query(
+    const rows = await query(
       `SELECT c.*, t.employee_id, u.first_name as teacher_first_name, u.last_name as teacher_last_name FROM courses c JOIN teachers t ON c.teacher_id = t.id JOIN users u ON t.user_id = u.id WHERE c.id = ? AND c.school_id = ?`,
       [id, schoolId]
     );
@@ -40,7 +40,7 @@ async function create(req, res, next) {
     const schoolId = getSchoolId(req);
     const { teacherId, name, code, class_level, credits } = req.body;
 
-    const [t] = await query('SELECT id FROM teachers WHERE id = ? AND school_id = ?', [teacherId, schoolId]);
+    const t = await query('SELECT id FROM teachers WHERE id = ? AND school_id = ?', [teacherId, schoolId]);
     if (!t[0]) return res.status(400).json({ error: 'Invalid teacher' });
 
     const id = uuidv4();
@@ -49,7 +49,7 @@ async function create(req, res, next) {
       [id, schoolId, teacherId, name, code || null, class_level || null, credits || 1]
     );
 
-    const [created] = await query('SELECT * FROM courses WHERE id = ?', [id]);
+    const created = await query('SELECT * FROM courses WHERE id = ?', [id]);
     res.status(201).json(created[0]);
   } catch (err) {
     next(err);
@@ -63,7 +63,7 @@ async function update(req, res, next) {
     const updates = req.body;
     const allowed = ['teacher_id', 'name', 'code', 'class_level', 'credits'];
 
-    const [existing] = await query('SELECT id FROM courses WHERE id = ? AND school_id = ?', [id, schoolId]);
+    const existing = await query('SELECT id FROM courses WHERE id = ? AND school_id = ?', [id, schoolId]);
     if (!existing[0]) return res.status(404).json({ error: 'Course not found' });
 
     const set = [];
@@ -79,7 +79,7 @@ async function update(req, res, next) {
       await query(`UPDATE courses SET ${set.join(', ')} WHERE id = ?`, vals);
     }
 
-    const [rows] = await query('SELECT * FROM courses WHERE id = ?', [id]);
+    const rows = await query('SELECT * FROM courses WHERE id = ?', [id]);
     res.json(rows[0]);
   } catch (err) {
     next(err);
@@ -91,7 +91,7 @@ async function remove(req, res, next) {
     const { id } = req.params;
     const schoolId = getSchoolId(req);
 
-    const [existing] = await query('SELECT id FROM courses WHERE id = ? AND school_id = ?', [id, schoolId]);
+    const existing = await query('SELECT id FROM courses WHERE id = ? AND school_id = ?', [id, schoolId]);
     if (!existing[0]) return res.status(404).json({ error: 'Course not found' });
     await query('DELETE FROM courses WHERE id = ?', [id]);
     res.json({ message: 'Course deleted' });

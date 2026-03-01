@@ -6,14 +6,18 @@ export default function Users() {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
-    api.get('/users').then((res) => setUsers(res.data.users || []));
+    let canceled = false;
+    api.get('/users')
+      .then((res) => { if (!canceled) setUsers(res.data.users || []); })
+      .catch(() => { if (!canceled) setUsers([]); });
+    return () => { canceled = true; };
   }, []);
 
   const columns = [
     { key: 'email', label: 'Email' },
     { key: 'first_name', label: 'First Name' },
     { key: 'last_name', label: 'Last Name' },
-    { key: 'role', label: 'Role', render: (r) => <span style={{ textTransform: 'capitalize' }}>{r.role?.replace('_', ' ')}</span> },
+    { key: 'role', label: 'Role', render: (r) => <span style={{ textTransform: 'capitalize' }}>{r.role?.replace(/_/g, ' ')}</span> },
   ];
 
   return (

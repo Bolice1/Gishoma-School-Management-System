@@ -15,7 +15,7 @@ function addFooter(doc) {
 }
 
 async function generateMarksReport(studentId) {
-  const [students] = await query(
+  const students = await query(
     `SELECT s.*, u.first_name, u.last_name, u.email FROM students s JOIN users u ON s.user_id = u.id WHERE s.id = ?`,
     [studentId]
   );
@@ -66,7 +66,7 @@ async function generateMarksReport(studentId) {
 }
 
 async function generateDisciplineReport(studentId) {
-  const [students] = await query(
+  const students = await query(
     `SELECT s.*, u.first_name, u.last_name FROM students s JOIN users u ON s.user_id = u.id WHERE s.id = ?`,
     [studentId]
   );
@@ -108,7 +108,7 @@ async function generateDisciplineReport(studentId) {
 }
 
 async function generateHomeworkReport(studentId) {
-  const [students] = await query(
+  const students = await query(
     `SELECT s.*, u.first_name, u.last_name FROM students s JOIN users u ON s.user_id = u.id WHERE s.id = ?`,
     [studentId]
   );

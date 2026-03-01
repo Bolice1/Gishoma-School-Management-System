@@ -7,8 +7,14 @@ export default function TeacherDashboard() {
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
+    let canceled = false;
     const id = user?.teacherId;
-    if (id) api.get(`/dashboard/teacher/${id}`).then((res) => setStats(res.data)).catch(() => setStats({}));
+    if (id) {
+      api.get(`/dashboard/teacher/${id}`)
+        .then((res) => { if (!canceled) setStats(res.data); })
+        .catch(() => { if (!canceled) setStats({}); });
+    }
+    return () => { canceled = true; };
   }, [user?.teacherId]);
 
   if (!stats && !user?.teacherId) return <div>Loading...</div>;

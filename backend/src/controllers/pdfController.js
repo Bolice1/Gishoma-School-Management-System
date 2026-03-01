@@ -7,12 +7,12 @@ async function marksReport(req, res, next) {
     const schoolId = req.schoolId;
 
     if (req.userRole === 'student') {
-      const [s] = await query('SELECT id FROM students WHERE user_id = ?', [req.userId]);
+      const s = await query('SELECT id FROM students WHERE user_id = ?', [req.userId]);
       if (!s[0] || s[0].id !== studentId) {
         return res.status(403).json({ error: 'Access denied' });
       }
     } else {
-      const [s] = await query('SELECT id FROM students WHERE id = ? AND school_id = ?', [studentId, schoolId]);
+      const s = await query('SELECT id FROM students WHERE id = ? AND school_id = ?', [studentId, schoolId]);
       if (!s[0]) return res.status(404).json({ error: 'Student not found' });
     }
 
@@ -30,10 +30,10 @@ async function disciplineReport(req, res, next) {
     const schoolId = req.schoolId;
 
     if (req.userRole === 'student') {
-      const [s] = await query('SELECT id FROM students WHERE user_id = ?', [req.userId]);
+      const s = await query('SELECT id FROM students WHERE user_id = ?', [req.userId]);
       if (!s[0] || s[0].id !== studentId) return res.status(403).json({ error: 'Access denied' });
     } else {
-      const [s] = await query('SELECT id FROM students WHERE id = ? AND school_id = ?', [studentId, schoolId]);
+      const s = await query('SELECT id FROM students WHERE id = ? AND school_id = ?', [studentId, schoolId]);
       if (!s[0]) return res.status(404).json({ error: 'Student not found' });
     }
 
@@ -51,10 +51,10 @@ async function homeworkReport(req, res, next) {
     const schoolId = req.schoolId;
 
     if (req.userRole === 'student') {
-      const [s] = await query('SELECT id FROM students WHERE user_id = ?', [req.userId]);
+      const s = await query('SELECT id FROM students WHERE user_id = ?', [req.userId]);
       if (!s[0] || s[0].id !== studentId) return res.status(403).json({ error: 'Access denied' });
     } else {
-      const [s] = await query('SELECT id FROM students WHERE id = ? AND school_id = ?', [studentId, schoolId]);
+      const s = await query('SELECT id FROM students WHERE id = ? AND school_id = ?', [studentId, schoolId]);
       if (!s[0]) return res.status(404).json({ error: 'Student not found' });
     }
 

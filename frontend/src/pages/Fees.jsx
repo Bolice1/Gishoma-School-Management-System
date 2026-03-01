@@ -8,8 +8,14 @@ export default function Fees() {
   const [tab, setTab] = useState('payments');
 
   useEffect(() => {
-    api.get('/fees/payments').then((res) => setPayments(res.data || []));
-    api.get('/fees').then((res) => setFees(res.data || []));
+    let canceled = false;
+    api.get('/fees/payments')
+      .then((res) => { if (!canceled) setPayments(res.data || []); })
+      .catch(() => { if (!canceled) setPayments([]); });
+    api.get('/fees')
+      .then((res) => { if (!canceled) setFees(res.data || []); })
+      .catch(() => { if (!canceled) setFees([]); });
+    return () => { canceled = true; };
   }, []);
 
   const paymentCols = [

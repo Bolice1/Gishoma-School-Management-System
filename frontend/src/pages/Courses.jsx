@@ -6,7 +6,11 @@ export default function Courses() {
   const [courses, setCourses] = useState([]);
 
   useEffect(() => {
-    api.get('/courses').then((res) => setCourses(res.data || []));
+    let canceled = false;
+    api.get('/courses')
+      .then((res) => { if (!canceled) setCourses(res.data || []); })
+      .catch(() => { if (!canceled) setCourses([]); });
+    return () => { canceled = true; };
   }, []);
 
   const columns = [

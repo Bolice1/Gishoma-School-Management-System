@@ -6,7 +6,15 @@ export default function Marks() {
   const [marks, setMarks] = useState([]);
 
   useEffect(() => {
-    api.get('/marks').then((res) => setMarks(res.data || []));
+    let canceled = false;
+    api.get('/marks')
+      .then((res) => {
+        if (!canceled) setMarks(res.data || []);
+      })
+      .catch(() => {
+        if (!canceled) setMarks([]);
+      });
+    return () => { canceled = true; };
   }, []);
 
   const columns = [

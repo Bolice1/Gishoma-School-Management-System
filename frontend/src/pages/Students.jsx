@@ -6,9 +6,15 @@ export default function Students() {
   const [students, setStudents] = useState([]);
 
   useEffect(() => {
+    let canceled = false;
     api.get('/students')
-      .then((res) => setStudents(res.data?.students ?? []))
-      .catch(() => setStudents([]));
+      .then((res) => {
+        if (!canceled) setStudents(res.data?.students ?? []);
+      })
+      .catch(() => {
+        if (!canceled) setStudents([]);
+      });
+    return () => { canceled = true; };
   }, []);
 
   const columns = [

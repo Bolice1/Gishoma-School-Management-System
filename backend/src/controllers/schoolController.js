@@ -21,7 +21,7 @@ async function list(req, res, next) {
       params.push(isActive === 'true');
     }
 
-    const [countRows] = await query(
+    const countRows = await query(
       `SELECT COUNT(*) as total FROM schools ${where}`,
       params
     );
@@ -41,7 +41,7 @@ async function list(req, res, next) {
 async function getById(req, res, next) {
   try {
     const { id } = req.params;
-    const [rows] = await query('SELECT * FROM schools WHERE id = ?', [id]);
+    const rows = await query('SELECT * FROM schools WHERE id = ?', [id]);
     if (!rows[0]) return res.status(404).json({ error: 'School not found' });
     res.json(rows[0]);
   } catch (err) {
@@ -54,7 +54,7 @@ async function create(req, res, next) {
     const { name, email, phone, address, region, adminEmail, adminPassword, adminFirstName, adminLastName } = req.body;
     const id = uuidv4();
     let slug = slugify(name);
-    const [existing] = await query('SELECT id FROM schools WHERE slug = ?', [slug]);
+    const existing = await query('SELECT id FROM schools WHERE slug = ?', [slug]);
     if (existing.length) slug = `${slug}-${Date.now()}`;
 
     await query(
@@ -71,7 +71,7 @@ async function create(req, res, next) {
       );
     }
 
-    const [school] = await query('SELECT * FROM schools WHERE id = ?', [id]);
+    const school = await query('SELECT * FROM schools WHERE id = ?', [id]);
     res.status(201).json(school[0]);
   } catch (err) {
     next(err);
@@ -94,7 +94,7 @@ async function update(req, res, next) {
     if (set.length === 0) return res.status(400).json({ error: 'No valid fields to update' });
     vals.push(id);
     await query(`UPDATE schools SET ${set.join(', ')} WHERE id = ?`, vals);
-    const [rows] = await query('SELECT * FROM schools WHERE id = ?', [id]);
+    const rows = await query('SELECT * FROM schools WHERE id = ?', [id]);
     res.json(rows[0]);
   } catch (err) {
     next(err);

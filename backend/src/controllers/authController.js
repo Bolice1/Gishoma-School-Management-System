@@ -35,10 +35,10 @@ async function login(req, res, next) {
 
     const { password_hash, two_factor_secret, ...safeUser } = user;
     if (user.role === 'student') {
-      const [s] = await query('SELECT id FROM students WHERE user_id = ?', [user.id]);
+      const s = await query('SELECT id FROM students WHERE user_id = ?', [user.id]);
       safeUser.studentId = s[0]?.id;
     } else if (user.role === 'teacher') {
-      const [t] = await query('SELECT id FROM teachers WHERE user_id = ?', [user.id]);
+      const t = await query('SELECT id FROM teachers WHERE user_id = ?', [user.id]);
       safeUser.teacherId = t[0]?.id;
     }
     res.json({
@@ -60,7 +60,7 @@ async function refresh(req, res, next) {
       return res.status(401).json({ error: 'Invalid or expired refresh token' });
     }
 
-    const [users] = await query('SELECT * FROM users WHERE id = ? AND is_active = 1', [record.user_id]);
+    const users = await query('SELECT * FROM users WHERE id = ? AND is_active = 1', [record.user_id]);
     const user = users[0];
     if (!user) {
       return res.status(401).json({ error: 'User not found or inactive' });
@@ -99,21 +99,24 @@ async function logout(req, res, next) {
 }
 
 async function me(req, res) {
-  const users = await query(
-    'SELECT id, school_id, email, first_name, last_name, role, phone, is_active FROM users WHERE id = ?',
-    [req.userId]
-  );
-  const user = users[0];
-  if (!user) return res.status(404).json({ error: 'User not found' });
+  try {
+    const users = await query(
+      'SELECT id, school_id, email, first_name, last_name, role, phone, is_active FROM users WHERE id = ?',
+      [req.userId]
+    );
+    const user = users[0];
+    if (!user) return res.status(404).json({ error: 'User not found' });
 
-  if (user.role === 'student') {
-    const s = await query('SELECT id FROM students WHERE user_id = ?', [user.id]);
-    user.studentId = s[0]?.id;
-  } else if (user.role === 'teacher') {
-    const t = await query('SELECT id FROM teachers WHERE user_id = ?', [user.id]);
-    user.teacherId = t[0]?.id;
+    if (user.role === 'student') {
+      const s = await query('SELECT id FROM students WHERE user_id = ?', [user.id]);
+      user.studentId = s[0]?.id;
+    } else if (user.role === 'teacher') {
+      const t = await query('SELECT id FROM teachers WHERE user_id = ?', [user.id]);
+      user.teacherId = t[0]?.id;
+    }
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
   }
-  res.json(user);
 }
-
 module.exports = { login, refresh, logout, me };

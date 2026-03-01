@@ -5,7 +5,11 @@ export default function DeanDashboard() {
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
-    api.get('/dashboard/dean').then((res) => setStats(res.data));
+    let canceled = false;
+    api.get('/dashboard/dean')
+      .then((res) => { if (!canceled) setStats(res.data); })
+      .catch(() => { if (!canceled) setStats(null); });
+    return () => { canceled = true; };
   }, []);
 
   if (!stats) return <div>Loading...</div>;

@@ -32,7 +32,7 @@ async function getById(req, res, next) {
     const { id } = req.params;
     const schoolId = getSchoolId(req);
 
-    const [rows] = await query(
+    const rows = await query(
       `SELECT h.*, c.name as course_name FROM homework h JOIN courses c ON h.course_id = c.id WHERE h.id = ? AND h.school_id = ?`,
       [id, schoolId]
     );
@@ -64,7 +64,7 @@ async function create(req, res, next) {
       [id, schoolId, courseId, teacherId, title, description || null, dueDate, maxScore || 100, status || 'published']
     );
 
-    const [created] = await query('SELECT * FROM homework WHERE id = ?', [id]);
+    const created = await query('SELECT * FROM homework WHERE id = ?', [id]);
     res.status(201).json(created[0]);
   } catch (err) {
     next(err);
@@ -77,7 +77,7 @@ async function submit(req, res, next) {
     const schoolId = getSchoolId(req);
     const { content } = req.body;
 
-    const [hw] = await query('SELECT id FROM homework WHERE id = ? AND school_id = ?', [homeworkId, schoolId]);
+    const hw = await query('SELECT id FROM homework WHERE id = ? AND school_id = ?', [homeworkId, schoolId]);
     if (!hw[0]) return res.status(404).json({ error: 'Homework not found' });
 
     const id = uuidv4();
@@ -86,7 +86,7 @@ async function submit(req, res, next) {
       [id, schoolId, homeworkId, studentId, content || null, 'submitted']
     );
 
-    const [created] = await query('SELECT * FROM homework_submissions WHERE id = ?', [id]);
+    const created = await query('SELECT * FROM homework_submissions WHERE id = ?', [id]);
     res.status(201).json(created[0]);
   } catch (err) {
     next(err);
@@ -99,7 +99,7 @@ async function gradeSubmission(req, res, next) {
     const schoolId = getSchoolId(req);
     const { score, feedback, status } = req.body;
 
-    const [existing] = await query('SELECT id FROM homework_submissions WHERE id = ? AND school_id = ?', [id, schoolId]);
+    const existing = await query('SELECT id FROM homework_submissions WHERE id = ? AND school_id = ?', [id, schoolId]);
     if (!existing[0]) return res.status(404).json({ error: 'Submission not found' });
 
     const set = [];
@@ -112,7 +112,7 @@ async function gradeSubmission(req, res, next) {
       await query(`UPDATE homework_submissions SET ${set.join(', ')} WHERE id = ?`, vals);
     }
 
-    const [rows] = await query('SELECT * FROM homework_submissions WHERE id = ?', [id]);
+    const rows = await query('SELECT * FROM homework_submissions WHERE id = ?', [id]);
     res.json(rows[0]);
   } catch (err) {
     next(err);

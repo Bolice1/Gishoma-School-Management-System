@@ -6,7 +6,11 @@ export default function Schools() {
   const [schools, setSchools] = useState([]);
 
   useEffect(() => {
-    api.get('/schools').then((res) => setSchools(res.data.schools || []));
+    let canceled = false;
+    api.get('/schools')
+      .then((res) => { if (!canceled) setSchools(res.data.schools || []); })
+      .catch(() => { if (!canceled) setSchools([]); });
+    return () => { canceled = true; };
   }, []);
 
   const columns = [

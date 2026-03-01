@@ -6,7 +6,11 @@ export default function ActivityLogs() {
   const [logs, setLogs] = useState([]);
 
   useEffect(() => {
-    api.get('/activity-logs').then((res) => setLogs(res.data || []));
+    let canceled = false;
+    api.get('/activity-logs')
+      .then((res) => { if (!canceled) setLogs(res.data || []); })
+      .catch(() => { if (!canceled) setLogs([]); });
+    return () => { canceled = true; };
   }, []);
 
   const columns = [

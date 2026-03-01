@@ -43,7 +43,7 @@ async function create(req, res, next) {
       [id, schoolId, studentId, teacherId, type, description, date, resolution || null, status || 'open']
     );
 
-    const [created] = await query('SELECT * FROM disciplines WHERE id = ?', [id]);
+    const created = await query('SELECT * FROM disciplines WHERE id = ?', [id]);
     res.status(201).json(created[0]);
   } catch (err) {
     next(err);
@@ -56,7 +56,7 @@ async function update(req, res, next) {
     const schoolId = getSchoolId(req);
     const { resolution, status } = req.body;
 
-    const [existing] = await query('SELECT id FROM disciplines WHERE id = ? AND school_id = ?', [id, schoolId]);
+    const existing = await query('SELECT id FROM disciplines WHERE id = ? AND school_id = ?', [id, schoolId]);
     if (!existing[0]) return res.status(404).json({ error: 'Discipline record not found' });
 
     const set = [];
@@ -68,7 +68,7 @@ async function update(req, res, next) {
       await query(`UPDATE disciplines SET ${set.join(', ')} WHERE id = ?`, vals);
     }
 
-    const [rows] = await query('SELECT * FROM disciplines WHERE id = ?', [id]);
+    const rows = await query('SELECT * FROM disciplines WHERE id = ?', [id]);
     res.json(rows[0]);
   } catch (err) {
     next(err);
