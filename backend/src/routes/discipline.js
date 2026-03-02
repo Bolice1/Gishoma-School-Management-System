@@ -1,13 +1,10 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const disciplineController = require('../controllers/disciplineController');
-const { authenticate, authorize, requireSchoolContext } = require('../middleware/auth');
-const { assertSchoolAccess } = require('../middleware/schoolAccess');
-
+const disciplineController = require("../controllers/disciplineController");
+const { authenticate, authorize, requireSchoolContext } = require("../middleware/auth");
+const { assertSchoolAccess } = require("../middleware/schoolAccess");
 router.use(authenticate, requireSchoolContext, assertSchoolAccess);
-
-router.get('/', authorize('super_admin', 'school_admin', 'dean', 'teacher'), disciplineController.list);
-router.post('/', authorize('teacher'), disciplineController.create);
-router.put('/:id', authorize('teacher', 'school_admin'), disciplineController.update);
-
+router.get("/", authorize("super_admin", "school_admin", "dean", "teacher", "patron", "matron"), disciplineController.list);
+router.post("/", authorize("teacher", "patron", "matron", "dean", "school_admin"), disciplineController.create);
+router.put("/:id", authorize("teacher", "patron", "matron", "dean", "school_admin"), disciplineController.update);
 module.exports = router;

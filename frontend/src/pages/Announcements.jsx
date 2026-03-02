@@ -63,7 +63,7 @@ const s = {
 
 export default function Announcements() {
   const { user } = useSelector((st) => st.auth);
-  const canCreate = ['super_admin', 'school_admin'].includes(user?.role);
+  const canCreate = ['super_admin', 'school_admin', 'teacher', 'dean', 'bursar'].includes(user?.role);
 
   const [announcements, setAnnouncements] = useState([]);
   const [filter, setFilter] = useState('all');

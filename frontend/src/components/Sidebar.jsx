@@ -28,6 +28,7 @@ const roleNav = {
     { to: '/', label: 'Dashboard' },
     { to: '/fees', label: 'Fees & Payments' },
     { to: '/students', label: 'Students' },
+    { to: '/announcements', label: 'Announcements' },
   ],
   dean: [
     { to: '/', label: 'Dashboard' },
@@ -35,6 +36,7 @@ const roleNav = {
     { to: '/teachers', label: 'Teachers' },
     { to: '/students', label: 'Students' },
     { to: '/discipline', label: 'Discipline' },
+    { to: '/announcements', label: 'Announcements' },
   ],
   teacher: [
     { to: '/', label: 'Dashboard' },
@@ -44,12 +46,14 @@ const roleNav = {
     { to: '/notes', label: 'Notes' },
     { to: '/exercises', label: 'Exercises' },
     { to: '/attendance', label: 'Attendance' },
+    { to: '/announcements', label: 'Announcements' },
   ],
   student: [
     { to: '/', label: 'Dashboard' },
     { to: '/notes', label: 'Notes' },
     { to: '/exercises', label: 'Exercises' },
     { to: '/homework', label: 'Homework' },
+    { to: '/announcements', label: 'Announcements' },
     { to: '/reports', label: 'My Reports' },
   ],
 };
