@@ -67,20 +67,6 @@ function validateEnv() {
     }
   }
 
-  // Warn about optional variables
-  optional.forEach((key) => {
-    if (!process.env[key]) {
-      const defaults = {
-        ENCRYPTION_KEY: 'Data encryption disabled (optional)',
-        DB_SSL: 'Database SSL disabled (default)',
-        BCRYPT_ROUNDS: '12 (default)',
-        MAX_LOGIN_ATTEMPTS: '5 (default)',
-        LOCKOUT_DURATION_MINUTES: '15 (default)',
-      };
-      console.warn(`⚠️  Optional env var not set: ${key} — ${defaults[key] || 'using default'}`);
-    }
-  });
-
   console.log('✅ Environment validation passed');
 }
 

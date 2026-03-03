@@ -1,5 +1,17 @@
 const mysql = require('mysql2/promise');
 
+// Suppress mysql2 internal warnings
+const originalWarn = console.warn;
+const warnFilter = originalWarn.bind(console);
+console.warn = function(...args) {
+  const msg = args[0]?.toString?.() || '';
+  // Filter out mysql2 internal warnings
+  if (msg.includes('Missing credentials') || msg.includes('Ignoring invalid configuration')) {
+    return;
+  }
+  warnFilter.apply(console, args);
+};
+
 const pool = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '3306', 10),
@@ -14,9 +26,6 @@ const pool = mysql.createPool({
   connectTimeout: 10000,
   multipleStatements: false,
   ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: true } : false,
-  connectionAttributes: {
-    _client_name: 'gishoma-backend',
-  },
 });
 
 // Validate pool connection on startup
