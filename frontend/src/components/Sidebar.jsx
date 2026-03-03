@@ -48,6 +48,22 @@ const roleNav = {
     { to: '/attendance', label: 'Attendance' },
     { to: '/announcements', label: 'Announcements' },
   ],
+  patron: [
+    { to: "/", label: "Dashboard" },
+    { to: "/students", label: "Students" },
+    { to: "/marks", label: "Marks" },
+    { to: "/discipline", label: "Discipline" },
+    { to: "/attendance", label: "Attendance" },
+    { to: "/announcements", label: "Announcements" },
+  ],
+  matron: [
+    { to: "/", label: "Dashboard" },
+    { to: "/students", label: "Students" },
+    { to: "/marks", label: "Marks" },
+    { to: "/discipline", label: "Discipline" },
+    { to: "/attendance", label: "Attendance" },
+    { to: "/announcements", label: "Announcements" },
+  ],
   student: [
     { to: '/', label: 'Dashboard' },
     { to: '/notes', label: 'Notes' },

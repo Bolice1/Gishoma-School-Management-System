@@ -75,4 +75,16 @@ async function bulkCreate(req, res, next) {
   }
 }
 
-module.exports = { list, create, bulkCreate };
+
+async function remove(req, res, next) {
+  try {
+    const { id } = req.params;
+    const schoolId = getSchoolId(req);
+    const { reason } = req.body;
+    const existing = await query('SELECT id FROM marks WHERE id = ? AND school_id = ?', [id, schoolId]);
+    await query('UPDATE marks SET removed = 1, removal_reason = ?, removed_by = ?, removed_at = NOW() WHERE id = ?', [reason, req.userId, id]);
+    res.json({ message: 'Mark removed', id });
+  } catch (err) { next(err); }
+}
+
+module.exports = { list, create, bulkCreate, remove };

@@ -1,11 +1,8 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const announcementController = require('../controllers/announcementController');
-const { authenticate, authorize, requireSchoolContext } = require('../middleware/auth');
-
+const announcementController = require("../controllers/announcementController");
+const { authenticate, authorize, requireSchoolContext } = require("../middleware/auth");
 router.use(authenticate, requireSchoolContext);
-
-router.get('/', announcementController.list);
-router.post('/', authorize('super_admin', 'school_admin', 'teacher', 'dean', 'bursar'), announcementController.create);
-
+router.get("/", announcementController.list);
+router.post("/", authorize("super_admin", "school_admin", "teacher", "dean", "bursar", "patron", "matron"), announcementController.create);
 module.exports = router;

@@ -29,6 +29,7 @@ const noteRoutes = require('./routes/notes');
 const feeRoutes = require('./routes/fees');
 const pdfRoutes = require('./routes/pdf');
 const announcementRoutes = require('./routes/announcements');
+const chatRoutes = require('./routes/chat');
 const activityLogRoutes = require('./routes/activityLogs');
 
 const app = express();
@@ -81,6 +82,7 @@ app.use('/api/exercises', exerciseRoutes);
 app.use('/api/notes', noteRoutes);
 app.use('/api/fees', feeRoutes);
 app.use('/api/pdf', pdfRoutes);
+app.use('/api/chat', chatRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/activity-logs', activityLogRoutes);
 

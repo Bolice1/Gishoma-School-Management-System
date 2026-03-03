@@ -1,0 +1,10 @@
+const express = require("express");
+const router = express.Router();
+const chatController = require("../controllers/chatController");
+const { authenticate, requireSchoolContext } = require("../middleware/auth");
+const { assertSchoolAccess } = require("../middleware/schoolAccess");
+router.use(authenticate, requireSchoolContext, assertSchoolAccess);
+router.get("/messages", chatController.list);
+router.post("/messages", chatController.create);
+router.delete("/messages/:id", chatController.deleteMessage);
+module.exports = router;
