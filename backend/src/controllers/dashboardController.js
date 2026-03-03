@@ -100,7 +100,17 @@ async function deanDashboard(req, res, next) {
 
 async function teacherDashboard(req, res, next) {
   try {
-    const teacherId = req.user.teacherId || req.params.teacherId;
+    let teacherId = req.params.teacherId || null;
+    
+    // If no teacherId in params, look up from database using logged-in userId
+    if (!teacherId && ['teacher', 'patron', 'matron'].includes(req.userRole)) {
+      const teacherRows = await query(
+        'SELECT id FROM teachers WHERE user_id = ?',
+        [req.userId]
+      );
+      teacherId = teacherRows[0]?.id || null;
+    }
+    
     if (!teacherId) return res.status(400).json({ error: 'Teacher ID required' });
 
     const schoolIdRow = await query('SELECT school_id FROM teachers WHERE id = ?', [teacherId]);

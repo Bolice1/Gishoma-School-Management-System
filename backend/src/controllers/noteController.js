@@ -30,9 +30,17 @@ async function create(req, res, next) {
   try {
     const schoolId = getSchoolId(req);
     const { courseId, title, content, topic } = req.body;
-    const teacherId = req.user.teacherId;
-
-    if (!teacherId) return res.status(403).json({ error: 'Teacher ID required' });
+    
+    // Look up teacherId from database using the logged-in userId
+    let teacherId = null;
+    if (['teacher', 'patron', 'matron'].includes(req.userRole)) {
+      const teacherRows = await query(
+        'SELECT id FROM teachers WHERE user_id = ?',
+        [req.userId]
+      );
+      teacherId = teacherRows[0]?.id || null;
+    }
+    // For school_admin and dean, teacherId stays null (allowed)
 
     const id = uuidv4();
     await query(
