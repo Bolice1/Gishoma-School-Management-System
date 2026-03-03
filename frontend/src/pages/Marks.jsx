@@ -200,7 +200,7 @@ export default function Marks() {
                     </td>
                     <td style={base.td}>{removed ? <span style={{ color: 'var(--color-danger)' }}>Removed</span> : pct + '%'}</td>
                     <td style={base.td}>{m.teacher_first_name} {m.teacher_last_name}</td>
-                    <td style={base.td} style={{ maxWidth: '200px', fontSize: '0.82rem' }}>
+                    <td style={{ ...base.td, maxWidth: '200px', fontSize: '0.82rem' }}>
                       {removed ? <span style={{ color: 'var(--color-danger)' }}>⚠ {m.removal_reason}</span> : (m.remarks || '—')}
                     </td>
                     {canAdd && <td style={base.td}>{!removed && <button style={base.btnDanger} onClick={() => { setRemoveReason(''); setError(''); setRemoveTarget(m); }}>Remove</button>}</td>}

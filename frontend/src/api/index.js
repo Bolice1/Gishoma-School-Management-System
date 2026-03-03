@@ -14,8 +14,20 @@ api.interceptors.request.use((config) => {
   try {
     const token = localStorage.getItem('token');
     if (token) config.headers.Authorization = `Bearer ${token}`;
-  } catch (e) {
     
+    // Only super_admin can optionally send X-School-ID header (when managing a specific school)
+    // Regular users have schoolId embedded in JWT already
+    if (storeRef && storeRef.getState) {
+      const state = storeRef.getState();
+      const role = state?.auth?.user?.role;
+      const schoolId = state?.auth?.user?.school_id || state?.auth?.schoolId;
+      
+      // Only add X-School-ID header for super_admin if they're viewing a specific school
+      if (role === 'super_admin' && schoolId) {
+        config.headers['X-School-ID'] = schoolId;
+      }
+    }
+  } catch (e) {
     // localStorage may be unavailable (private browsing)
   }
   return config;

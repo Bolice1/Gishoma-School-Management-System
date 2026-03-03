@@ -58,12 +58,12 @@ async function findUserByEmail(email, schoolId = null) {
   let rows;
   if (schoolId) {
     rows = await query(
-      'SELECT * FROM users WHERE email = ? AND school_id = ? AND is_active = 1',
+      'SELECT id, email, first_name, last_name, role, school_id, is_active, created_at, password_hash FROM users WHERE email = ? AND school_id = ? AND is_active = 1',
       [email, schoolId]
     );
   } else {
     rows = await query(
-      'SELECT * FROM users WHERE email = ? AND is_active = 1 ORDER BY school_id IS NULL DESC LIMIT 1',
+      'SELECT id, email, first_name, last_name, role, school_id, is_active, created_at, password_hash FROM users WHERE email = ? AND is_active = 1 ORDER BY school_id IS NULL DESC LIMIT 1',
       [email]
     );
   }

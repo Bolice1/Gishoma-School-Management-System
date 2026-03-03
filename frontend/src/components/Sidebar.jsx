@@ -23,6 +23,7 @@ const roleNav = {
     { to: '/notes', label: 'Notes' },
     { to: '/fees', label: 'Fees' },
     { to: '/announcements', label: 'Announcements' },
+    { to: '/email', label: '✉️ Send Email' },
   ],
   bursar: [
     { to: '/', label: 'Dashboard' },
@@ -55,6 +56,7 @@ const roleNav = {
     { to: "/discipline", label: "Discipline" },
     { to: "/attendance", label: "Attendance" },
     { to: "/announcements", label: "Announcements" },
+    { to: "/email", label: "✉️ Send Email" },
   ],
   matron: [
     { to: "/", label: "Dashboard" },
@@ -63,9 +65,11 @@ const roleNav = {
     { to: "/discipline", label: "Discipline" },
     { to: "/attendance", label: "Attendance" },
     { to: "/announcements", label: "Announcements" },
+    { to: "/email", label: "✉️ Send Email" },
   ],
   student: [
     { to: '/', label: 'Dashboard' },
+    { to: '/chat', label: '💬 Student Chat' },
     { to: '/notes', label: 'Notes' },
     { to: '/exercises', label: 'Exercises' },
     { to: '/homework', label: 'Homework' },

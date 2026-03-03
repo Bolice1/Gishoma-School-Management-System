@@ -52,7 +52,10 @@ export default function Exercises() {
   const load = () => api.get('/exercises').then(r => setExercises(r.data || [])).catch(() => setExercises([]));
 
   useEffect(() => { load(); }, []);
-  useEffect(() => { api.get('/courses').then(r => setCourses(r.data || [])).catch(() => setCourses([])); }, []);
+  useEffect(() => { api.get('/courses').then(r => {
+    const d = r.data;
+    setCourses(Array.isArray(d) ? d : d?.courses || []);
+  }).catch(() => setCourses([])); }, []);
 
   const addQuestion = () => setQuestions([...questions, { question: '', type: 'text' }]);
   const removeQuestion = (i) => setQuestions(questions.filter((_, idx) => idx !== i));

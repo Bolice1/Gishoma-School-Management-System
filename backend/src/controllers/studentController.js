@@ -1,9 +1,14 @@
 const { v4: uuidv4 } = require('uuid');
 const { query } = require('../config/database');
 const authService = require('../services/authService');
+const emailService = require('../services/emailService');
+
+function isStrongPassword(password) {
+  return password && password.length >= 8;
+}
 
 function getSchoolId(req) {
-  return req.contextSchoolId || req.schoolId;
+  return req.schoolId;
 }
 
 async function list(req, res, next) {
@@ -57,8 +62,16 @@ async function create(req, res, next) {
     const schoolId = getSchoolId(req);
     const { email, password, firstName, lastName, studentId, class_level, section, dateOfBirth, gender, parentName, parentPhone, address } = req.body;
 
+    // Validate password if provided
+    if (password && !isStrongPassword(password)) {
+      return res.status(400).json({
+        error: 'Password must be at least 8 characters long'
+      });
+    }
+
     const userId = uuidv4();
-    const hash = await authService.hashPassword(password || 'password123');
+    const plainPassword = password || process.env.DEFAULT_PASSWORD || 'password123';
+    const hash = await authService.hashPassword(plainPassword);
 
     await query(
       'INSERT INTO users (id, school_id, email, password_hash, first_name, last_name, role) VALUES (?, ?, ?, ?, ?, ?, ?)',
@@ -75,6 +88,19 @@ async function create(req, res, next) {
       `SELECT s.*, u.first_name, u.last_name, u.email FROM students s JOIN users u ON s.user_id = u.id WHERE s.id = ?`,
       [id]
     );
+
+    // Send welcome email (non-blocking)
+    try {
+      await emailService.sendWelcomeEmail({
+        to: email,
+        firstName: firstName,
+        role: 'student',
+        password: plainPassword,
+      });
+    } catch (emailErr) {
+      console.error('Welcome email failed:', emailErr.message);
+    }
+
     res.status(201).json(created[0]);
   } catch (err) {
     next(err);
@@ -86,7 +112,7 @@ async function update(req, res, next) {
     const { id } = req.params;
     const schoolId = getSchoolId(req);
     const updates = req.body;
-    const allowed = ['class_level', 'section', 'date_of_birth', 'gender', 'parent_name', 'parent_phone', 'address'];
+    const allowed = ['class_level', 'section', 'date_of_birth', 'gender', 'parent_name', 'parent_phone', 'address', 'is_prefect'];
 
     const existing = await query('SELECT id FROM students WHERE id = ? AND school_id = ?', [id, schoolId]);
     if (!existing[0]) return res.status(404).json({ error: 'Student not found' });

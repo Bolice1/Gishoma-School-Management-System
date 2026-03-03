@@ -11,11 +11,36 @@ const pool = mysql.createPool({
   queueLimit: 0,
   enableKeepAlive: true,
   keepAliveInitialDelay: 0,
+  connectTimeout: 10000,
+  multipleStatements: false,
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: true } : false,
+  connectionAttributes: {
+    _client_name: 'gishoma-backend',
+  },
+});
+
+// Validate pool connection on startup
+pool.on('error', (err) => {
+  console.error('Database pool error:', err.code || err.message);
+  if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+    console.error('FATAL: Database connection lost. Exiting.');
+    process.exit(1);
+  }
 });
 
 async function query(sql, params = []) {
-  const [rows] = await pool.execute(sql, params);
-  return rows;
+  try {
+    const [rows] = await pool.execute(sql, params);
+    return rows;
+  } catch (err) {
+    // Log error safely without exposing sensitive data
+    console.error('Query error:', {
+      code: err.code,
+      message: err.message,
+      sqlLength: sql.length,
+    });
+    throw err;
+  }
 }
 
 async function getConnection() {

@@ -1,9 +1,14 @@
 const { v4: uuidv4 } = require('uuid');
 const { query } = require('../config/database');
 const authService = require('../services/authService');
+const emailService = require('../services/emailService');
+
+function isStrongPassword(password) {
+  return password && password.length >= 8;
+}
 
 function getSchoolId(req) {
-  return req.contextSchoolId || req.schoolId;
+  return req.schoolId;
 }
 
 async function list(req, res, next) {
@@ -40,8 +45,16 @@ async function create(req, res, next) {
     const schoolId = getSchoolId(req);
     const { email, password, firstName, lastName, employeeId, specialization, dateOfBirth, gender, hireDate, address } = req.body;
 
+    // Validate password if provided
+    if (password && !isStrongPassword(password)) {
+      return res.status(400).json({
+        error: 'Password must be at least 8 characters long'
+      });
+    }
+
     const userId = uuidv4();
-    const hash = await authService.hashPassword(password || 'password123');
+    const plainPassword = password || process.env.DEFAULT_PASSWORD || 'password123';
+    const hash = await authService.hashPassword(plainPassword);
 
     await query(
       'INSERT INTO users (id, school_id, email, password_hash, first_name, last_name, role) VALUES (?, ?, ?, ?, ?, ?, ?)',
@@ -58,6 +71,19 @@ async function create(req, res, next) {
       `SELECT t.*, u.first_name, u.last_name, u.email FROM teachers t JOIN users u ON t.user_id = u.id WHERE t.id = ?`,
       [id]
     );
+
+    // Send welcome email (non-blocking)
+    try {
+      await emailService.sendWelcomeEmail({
+        to: email,
+        firstName: firstName,
+        role: 'teacher',
+        password: plainPassword,
+      });
+    } catch (emailErr) {
+      console.error('Welcome email failed:', emailErr.message);
+    }
+
     res.status(201).json(created[0]);
   } catch (err) {
     next(err);

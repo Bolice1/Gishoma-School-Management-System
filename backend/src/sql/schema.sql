@@ -178,18 +178,23 @@ CREATE TABLE IF NOT EXISTS marks (
   school_id CHAR(36) NOT NULL,
   student_id CHAR(36) NOT NULL,
   course_id CHAR(36) NOT NULL,
-  teacher_id CHAR(36) NOT NULL,
+  teacher_id CHAR(36),
   term VARCHAR(50) NOT NULL,
   academic_year VARCHAR(20) NOT NULL,
   exam_type ENUM('midterm', 'final', 'assignment', 'quiz'),
   score DECIMAL(5,2) NOT NULL,
   max_score DECIMAL(5,2) DEFAULT 100,
   remarks TEXT,
+  removed BOOLEAN DEFAULT FALSE,
+  removal_reason TEXT,
+  removed_by CHAR(36),
+  removed_at TIMESTAMP NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE,
   FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
   FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
-  FOREIGN KEY (teacher_id) REFERENCES teachers(id) ON DELETE CASCADE,
+  FOREIGN KEY (teacher_id) REFERENCES teachers(id) ON DELETE SET NULL,
+  FOREIGN KEY (removed_by) REFERENCES users(id) ON DELETE SET NULL,
   INDEX idx_marks_school (school_id),
   INDEX idx_marks_student (student_id)
 );
@@ -358,6 +363,56 @@ CREATE TABLE IF NOT EXISTS announcements (
   FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE,
   FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE SET NULL,
   INDEX idx_announcements_school (school_id)
+);
+
+-- ===== SECURITY TABLES =====
+
+-- Blacklisted/revoked tokens (logout, password reset, etc.)
+CREATE TABLE IF NOT EXISTS blacklisted_tokens (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  token LONGTEXT NOT NULL,
+  expires_at DATETIME NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_expires (expires_at)
+);
+
+-- Login attempt tracking for brute force protection
+CREATE TABLE IF NOT EXISTS login_attempts (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  email VARCHAR(255) NOT NULL,
+  ip_address VARCHAR(45),
+  success TINYINT(1) DEFAULT 0,
+  attempted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_email_time (email, attempted_at)
+);
+
+-- Account lockouts after failed login attempts
+CREATE TABLE IF NOT EXISTS account_lockouts (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id CHAR(36) NOT NULL,
+  locked_until DATETIME NOT NULL,
+  reason VARCHAR(255),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_user_locked (user_id, locked_until)
+);
+
+-- Security events (suspicious activity, access logs, etc.)
+CREATE TABLE IF NOT EXISTS security_events (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  school_id CHAR(36) NULL,
+  user_id CHAR(36) NULL,
+  event_type VARCHAR(100) NOT NULL,
+  severity ENUM('low','medium','high','critical') DEFAULT 'low',
+  description TEXT,
+  ip_address VARCHAR(45),
+  user_agent TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_school (school_id),
+  INDEX idx_severity (severity),
+  INDEX idx_created (created_at)
 );
 
 SET FOREIGN_KEY_CHECKS = 1;

@@ -2,7 +2,7 @@ const { v4: uuidv4 } = require('uuid');
 const { query } = require('../config/database');
 
 function getSchoolId(req) {
-  return req.contextSchoolId || req.schoolId;
+  return req.schoolId;
 }
 
 async function list(req, res, next) {
@@ -12,7 +12,18 @@ async function list(req, res, next) {
 
     let where = 'm.school_id = ?';
     const params = [schoolId];
-    if (studentId) { where += ' AND m.student_id = ?'; params.push(studentId); }
+    
+    // If student, automatically filter to their own marks
+    if (req.userRole === 'student') {
+      where += ' AND m.student_id = (SELECT id FROM students WHERE user_id = ?)';
+      params.push(req.userId);
+      // Students don't see removed marks
+      where += ' AND m.removed = 0';
+    } else {
+      // Non-students can optionally filter by studentId
+      if (studentId) { where += ' AND m.student_id = ?'; params.push(studentId); }
+    }
+    
     if (courseId) { where += ' AND m.course_id = ?'; params.push(courseId); }
     if (term) { where += ' AND m.term = ?'; params.push(term); }
     if (academicYear) { where += ' AND m.academic_year = ?'; params.push(academicYear); }
@@ -20,8 +31,12 @@ async function list(req, res, next) {
     const rows = await query(
       `SELECT m.*, s.student_id as student_no, u1.first_name as student_first_name, u1.last_name as student_last_name,
        c.name as course_name, t.employee_id as teacher_employee_id, u2.first_name as teacher_first_name, u2.last_name as teacher_last_name
-       FROM marks m JOIN students s ON m.student_id = s.id JOIN users u1 ON s.user_id = u1.id
-       JOIN courses c ON m.course_id = c.id JOIN teachers t ON m.teacher_id = t.id JOIN users u2 ON t.user_id = u2.id
+       FROM marks m 
+       JOIN students s ON m.student_id = s.id 
+       JOIN users u1 ON s.user_id = u1.id
+       JOIN courses c ON m.course_id = c.id 
+       LEFT JOIN teachers t ON m.teacher_id = t.id 
+       LEFT JOIN users u2 ON t.user_id = u2.id
        WHERE ${where} ORDER BY m.academic_year DESC, m.term`,
       params
     );
@@ -37,11 +52,19 @@ async function create(req, res, next) {
     const { studentId, courseId, term, academicYear, examType, score, maxScore, remarks } = req.body;
 
     const id = uuidv4();
-    const teacherId = req.user.teacherId;
-    if (!teacherId) return res.status(403).json({ error: 'Teacher ID required' });
+    
+    // Get teacherId from JWT (if teacher) or allow null for admin/dean/patron/matron
+    let teacherId = null;
+    if (req.userRole === 'teacher') {
+      const t = await query('SELECT id FROM teachers WHERE user_id = ?', [req.userId]);
+      if (!t[0]) return res.status(403).json({ error: 'Teacher record not found' });
+      teacherId = t[0].id;
+    } else if (!['school_admin', 'dean', 'patron', 'matron'].includes(req.userRole)) {
+      return res.status(403).json({ error: 'Insufficient permissions to create marks' });
+    }
 
     await query(
-      `INSERT INTO marks (id, school_id, student_id, course_id, teacher_id, term, academic_year, exam_type, score, max_score, remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO marks (id, school_id, student_id, course_id, teacher_id, term, academic_year, exam_type, score, max_score, remarks, removed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
       [id, schoolId, studentId, courseId, teacherId, term, academicYear, examType || null, score, maxScore || 100, remarks || null]
     );
 
@@ -56,16 +79,25 @@ async function bulkCreate(req, res, next) {
   try {
     const schoolId = getSchoolId(req);
     const { marks } = req.body;
-    const teacherId = req.user.teacherId;
 
-    if (!Array.isArray(marks) || marks.length === 0 || !teacherId) {
-      return res.status(400).json({ error: 'Marks array and teacher context required' });
+    if (!Array.isArray(marks) || marks.length === 0) {
+      return res.status(400).json({ error: 'Marks array is required' });
+    }
+
+    // Get teacherId from JWT (if teacher) or allow null for admin/dean/patron/matron
+    let teacherId = null;
+    if (req.userRole === 'teacher') {
+      const t = await query('SELECT id FROM teachers WHERE user_id = ?', [req.userId]);
+      if (!t[0]) return res.status(403).json({ error: 'Teacher record not found' });
+      teacherId = t[0].id;
+    } else if (!['school_admin', 'dean', 'patron', 'matron'].includes(req.userRole)) {
+      return res.status(403).json({ error: 'Insufficient permissions to create marks' });
     }
 
     for (const m of marks) {
       const id = uuidv4();
       await query(
-        `INSERT INTO marks (id, school_id, student_id, course_id, teacher_id, term, academic_year, exam_type, score, max_score, remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO marks (id, school_id, student_id, course_id, teacher_id, term, academic_year, exam_type, score, max_score, remarks, removed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
         [id, schoolId, m.studentId, m.courseId, teacherId, m.term, m.academicYear, m.examType || null, m.score, m.maxScore || 100, m.remarks || null]
       );
     }

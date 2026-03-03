@@ -2,7 +2,7 @@ const { v4: uuidv4 } = require('uuid');
 const { query } = require('../config/database');
 
 function getSchoolId(req) {
-  return req.contextSchoolId || req.schoolId;
+  return req.schoolId;
 }
 
 async function listStudents(req, res, next) {
@@ -58,13 +58,24 @@ async function record(req, res, next) {
       return res.status(400).json({ error: 'Records array required' });
     }
 
-    for (const r of records) {
-      const id = uuidv4();
-      await query(
-        `INSERT INTO attendance (id, school_id, student_id, teacher_id, course_id, date, status, type, remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [id, schoolId, r.studentId || null, r.teacherId || null, r.courseId || null, r.date, r.status, r.type, r.remarks || null]
-      );
-    }
+    // Bulk insert using single SQL statement
+    const placeholders = records.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?)').join(',');
+    const values = records.flatMap(r => [
+      uuidv4(),
+      schoolId,
+      r.studentId || null,
+      r.teacherId || null,
+      r.courseId || null,
+      r.date,
+      r.status,
+      r.type,
+      r.remarks || null
+    ]);
+
+    await query(
+      `INSERT INTO attendance (id, school_id, student_id, teacher_id, course_id, date, status, type, remarks) VALUES ${placeholders}`,
+      values
+    );
     res.status(201).json({ message: `${records.length} record(s) created` });
   } catch (err) {
     next(err);

@@ -3,7 +3,7 @@ const { query } = require('../config/database');
 const authService = require('../services/authService');
 
 function getSchoolId(req) {
-  return req.contextSchoolId || req.schoolId;
+  return req.schoolId;
 }
 
 async function list(req, res, next) {
@@ -41,7 +41,7 @@ async function create(req, res, next) {
     if (existing[0]) return res.status(400).json({ error: 'Email already registered' });
 
     const userId = uuidv4();
-    const hash = await authService.hashPassword(password || 'password123');
+    const hash = await authService.hashPassword(password || process.env.DEFAULT_PASSWORD || 'password123');
 
     const allowedRoles = ['school_admin', 'bursar', 'dean', 'teacher', 'student'];
     if (!allowedRoles.includes(role)) return res.status(400).json({ error: 'Invalid role' });

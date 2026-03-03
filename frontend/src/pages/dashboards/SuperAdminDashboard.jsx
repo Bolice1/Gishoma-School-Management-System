@@ -12,7 +12,7 @@ const s = {
   statIcon: { fontSize: '1.5rem', marginBottom: '0.5rem' },
   grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' },
   card: { background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '12px', padding: '1.5rem' },
-  cardTitle: { fontSize: '1rem', fontWeight: 600, margin: '0 0 1.25rem 0', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.8rem' },
+  cardTitle: { fontSize: '0.8rem', fontWeight: 600, margin: '0 0 1.25rem 0', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' },
   btn: { padding: '0.6rem 1.2rem', background: 'var(--color-accent)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.95rem' },
   btnSecondary: { padding: '0.4rem 0.8rem', background: 'transparent', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' },
   btnSmall: { padding: '0.35rem 0.7rem', background: 'var(--color-accent)', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '0.8rem' },

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import api from '../api';
+import { formatDate } from '../utils/format';
 
 const s = {
   page: { padding: '2rem' },
@@ -57,15 +58,27 @@ export default function Attendance() {
   const [dateFilter, setDateFilter] = useState(new Date().toISOString().split('T')[0]);
 
   const loadAttendance = () => {
-    api.get(`/attendance/students?startDate=${dateFilter}&endDate=${dateFilter}`).then(r => setStudentAtt(r.data || [])).catch(() => setStudentAtt([]));
-    api.get(`/attendance/teachers?startDate=${dateFilter}&endDate=${dateFilter}`).then(r => setTeacherAtt(r.data || [])).catch(() => setTeacherAtt([]));
+    api.get(`/attendance/students?startDate=${dateFilter}&endDate=${dateFilter}`).then(r => {
+      const d = r.data;
+      setStudentAtt(Array.isArray(d) ? d : d?.studentAttendance || []);
+    }).catch(() => setStudentAtt([]));
+    api.get(`/attendance/teachers?startDate=${dateFilter}&endDate=${dateFilter}`).then(r => {
+      const d = r.data;
+      setTeacherAtt(Array.isArray(d) ? d : d?.teacherAttendance || []);
+    }).catch(() => setTeacherAtt([]));
   };
 
   useEffect(() => { loadAttendance(); }, [dateFilter]);
 
   useEffect(() => {
-    api.get('/students').then(r => setStudents(r.data?.students || r.data || [])).catch(() => setStudents([]));
-    api.get('/teachers').then(r => setTeachers(r.data?.teachers || r.data || [])).catch(() => setTeachers([]));
+    api.get('/students').then(r => {
+      const d = r.data;
+      setStudents(Array.isArray(d) ? d : d?.students || []);
+    }).catch(() => setStudents([]));
+    api.get('/teachers').then(r => {
+      const d = r.data;
+      setTeachers(Array.isArray(d) ? d : d?.teachers || []);
+    }).catch(() => setTeachers([]));
   }, []);
 
   const openMark = (type) => {
@@ -170,7 +183,7 @@ export default function Attendance() {
               <tr key={i}>
                 <td style={s.td}><strong>{r.first_name} {r.last_name}</strong></td>
                 <td style={s.td}>{r.student_no || r.employee_id || '-'}</td>
-                <td style={s.td}>{r.date}</td>
+                <td style={s.td}>{formatDate(r.date)}</td>
                 <td style={s.td}><span style={s.badge(r.status)}>{r.status}</span></td>
                 {tab === 'students' && <td style={s.td}>{r.remarks || '-'}</td>}
               </tr>

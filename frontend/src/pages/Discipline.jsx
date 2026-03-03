@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import api from '../api';
+import { formatDate } from '../utils/format';
 
 const TYPES = ['Misconduct', 'Absence', 'Violence', 'Theft', 'Cheating', 'Bullying', 'Vandalism', 'Insubordination', 'Other'];
 const CAN_MANAGE = ['teacher', 'patron', 'matron', 'dean', 'school_admin'];
@@ -113,7 +114,7 @@ export default function Discipline() {
                   <td style={base.td}><strong>{r.student_first_name} {r.student_last_name}</strong><br/><span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>{r.student_no}</span></td>
                   <td style={base.td}>{r.type}</td>
                   <td style={{ ...base.td, maxWidth: '200px', fontSize: '0.85rem' }}>{r.description}</td>
-                  <td style={base.td}>{r.date}</td>
+                  <td style={base.td}>{formatDate(r.date)}</td>
                   <td style={base.td}>{r.teacher_first_name} {r.teacher_last_name}</td>
                   <td style={base.td}><span style={statusBadge(r.status)}>{r.status}</span></td>
                   <td style={{ ...base.td, maxWidth: '180px', fontSize: '0.85rem' }}>{r.resolution || '—'}</td>
@@ -153,7 +154,7 @@ export default function Discipline() {
             <h2 style={{ fontSize: '1.3rem', fontFamily: 'var(--font-serif)', margin: '0 0 1rem 0' }}>Resolve Case</h2>
             <div style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '1rem', marginBottom: '1.25rem' }}>
               <p style={{ margin: '0 0 0.3rem 0', fontWeight: 600 }}>{resolveTarget.student_first_name} {resolveTarget.student_last_name}</p>
-              <p style={{ margin: '0 0 0.3rem 0', fontSize: '0.9rem' }}>{resolveTarget.type} · {resolveTarget.date}</p>
+              <p style={{ margin: '0 0 0.3rem 0', fontSize: '0.9rem' }}>{resolveTarget.type} · {formatDate(resolveTarget.date)}</p>
               <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>{resolveTarget.description}</p>
             </div>
             <div style={base.field}><label style={base.label}>Resolution *</label><textarea style={base.textarea} value={resolveForm.resolution} onChange={e => setResolveForm({ ...resolveForm, resolution: e.target.value })} placeholder="Describe the action taken to resolve this case..." /></div>

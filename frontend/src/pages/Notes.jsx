@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import api from '../api';
+import { formatDate } from '../utils/format';
 
 const s = {
   page: { padding: '2rem' },
@@ -50,7 +51,10 @@ export default function Notes() {
 
   useEffect(() => { load(); }, [filterCourse]);
   useEffect(() => {
-    api.get('/courses').then(r => setCourses(r.data || [])).catch(() => setCourses([]));
+    api.get('/courses').then(r => {
+      const d = r.data;
+      setCourses(Array.isArray(d) ? d : d?.courses || []);
+    }).catch(() => setCourses([]));
   }, []);
 
   const openCreate = () => {
@@ -110,7 +114,7 @@ export default function Notes() {
                 <span style={s.badge}>{note.course_name}</span>
               </div>
               {note.topic && <div style={s.meta}>Topic: {note.topic}</div>}
-              <div style={s.meta}>By {note.teacher_first_name} {note.teacher_last_name} · {new Date(note.created_at).toLocaleDateString()}</div>
+              <div style={s.meta}>By {note.teacher_first_name} {note.teacher_last_name} · {formatDate(note.created_at)}</div>
               {expanded === note.id ? (
                 <div style={s.expandedContent}>
                   <div style={s.content}>{note.content}</div>

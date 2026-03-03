@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { store } from './store';
 import { fetchMe } from './store/authSlice';
+import { ToastProvider } from './components/Toast';
 import Login from './pages/Login';
 import Layout from './components/Layout';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -26,6 +27,7 @@ import Exercises from './pages/Exercises';
 import Notes from './pages/Notes';
 import Fees from './pages/Fees';
 import Announcements from './pages/Announcements';
+import EmailComposer from './pages/EmailComposer';
 import StudentChat from './pages/StudentChat';
 import Reports from './pages/Reports';
 import ActivityLogs from './pages/ActivityLogs';
@@ -80,6 +82,11 @@ function AppRoutes() {
         <Route path="notes" element={<ProtectedRoute roles={['super_admin', 'school_admin', 'teacher', 'student']}><Notes /></ProtectedRoute>} />
         <Route path="fees" element={<ProtectedRoute roles={['super_admin', 'school_admin', 'bursar']}><Fees /></ProtectedRoute>} />
         <Route path="announcements" element={<ProtectedRoute><Announcements /></ProtectedRoute>} />
+        <Route path="email" element={
+          <ProtectedRoute roles={['school_admin', 'patron', 'matron', 'dean']}>
+            <EmailComposer />
+          </ProtectedRoute>
+        } />
         <Route path="chat" element={<ProtectedRoute roles={['student', 'patron', 'matron', 'dean', 'teacher', 'school_admin']}><StudentChat /></ProtectedRoute>} />
         <Route path="reports" element={<ProtectedRoute roles={['student']}><Reports /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
@@ -107,11 +114,13 @@ function App() {
   return (
     <ErrorBoundary>
       <Provider store={store}>
-        <BrowserRouter>
-          <Routes>
-            <Route path="*" element={<AppRoutes />} />
-          </Routes>
-        </BrowserRouter>
+        <ToastProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="*" element={<AppRoutes />} />
+            </Routes>
+          </BrowserRouter>
+        </ToastProvider>
       </Provider>
     </ErrorBoundary>
   );

@@ -2,7 +2,7 @@ const { v4: uuidv4 } = require('uuid');
 const { query } = require('../config/database');
 
 function getSchoolId(req) {
-  return req.contextSchoolId || req.schoolId;
+  return req.schoolId;
 }
 
 async function list(req, res, next) {
