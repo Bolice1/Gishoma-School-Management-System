@@ -13,3 +13,4 @@ router.get('/teachers', authorize('super_admin', 'school_admin', 'dean'), attend
 router.post('/', authorize('super_admin', 'school_admin', 'dean', 'teacher'), createAttendanceRules, handleValidation, attendanceController.record);
 
 module.exports = router;
+// the above is the attandance router configuration 
